@@ -1,37 +1,39 @@
 import { YankiConnect } from "yanki-connect";
-import { Sentence } from "./search_sentence";
+import type { Sentence } from "./search_sentence";
+import type { DictionaryEntry } from "./dictionary";
 
 const client = new YankiConnect();
 
-const decks = await client.deck.deckNames();
+interface Note {
+  sentence: Sentence;
+  dictionary: DictionaryEntry;
+}
 
-console.log(decks); // ["Your", "Deck", "Names", "Here"]
-
-async function addNote(note: Sentence) {
+export async function addNote(deckName: string, modelName: string, note: Note) {
   const nid = await client.note.addNote({
     note: {
-      deckName: "Your Deck Name",
-      modelName: "Basic",
+      deckName,
+      modelName,
       fields: {
-        Sentence: note.sentence,
-        "Sentence-English": note.eng,
-        Word: note.searchTerm,
-        Glossary: "TODO",
-        Reading: note.furigana,
+        Sentence: note.sentence.sentence,
+        "Sentence-English": note.sentence.eng,
+        Word: note.sentence.searchTerm,
+        Glossary: note.dictionary.glossary.map((g) => g.meaning).join("\n"),
+        Reading: note.dictionary.reading,
       },
       audio: [
         {
-          path: note.randomAudioFilename,
+          path: note.sentence.randomAudioFilename,
           fields: ["Audio"],
         },
         {
-          path: note.randomAudioFilename,
+          path: note.sentence.randomAudioFilename,
           fields: ["Sentence-Audio"],
         },
       ],
       picture: [
         {
-          path: "/home/james/Downloads/Ankidrone/NDL_0001_Male.ogg",
+          path: note.sentence.randomAudioFilename,
           fields: ["Front"],
         },
       ],

@@ -1,6 +1,5 @@
 import { Deck } from "anki-apkg-parser";
 import { UNPACK_PATH } from "./rebuild_unpack";
-import { analyze, analyzeSync, tokenizeSync } from "@enjoyjs/node-mecab";
 
 // To rebuild the model fields, run the following code:
 // for (const model of Object.values(models)) {
@@ -35,11 +34,49 @@ function parseSound(sound: string): string | null {
 export interface Sentence {
   searchTerm: string;
   sentence: string;
-  furigana: string | undefined;
   eng: string;
   audioNames: string[];
   audioFilenames: string[];
   randomAudioFilename: string;
+}
+
+function makeSentence(
+  searchTerm: string,
+  item: string[],
+  reverseMedia: Record<string, string>
+): Sentence | null {
+  const engParts = item[ModelFields.SentEng]?.split(/<br\/?>/);
+  const eng1 = engParts?.[0];
+
+  const audioNames = item[ModelFields.SentAudio]?.split(/<br\/?>/);
+
+  const audioFilenames = audioNames
+    ?.map((name) => parseSound(name))
+    .filter((r) => r !== null)
+    .map((r) => reverseMedia[r]);
+
+  if (
+    !eng1 ||
+    !audioFilenames ||
+    !item[ModelFields.SentKanji] ||
+    !audioNames ||
+    !audioFilenames ||
+    !audioFilenames.some((r) => r === undefined)
+  ) {
+    return null;
+  }
+
+  const sentence: Sentence = {
+    searchTerm,
+    sentence: item[ModelFields.SentKanji],
+    eng: eng1,
+    audioNames: audioNames,
+    audioFilenames: audioFilenames.filter((r) => r !== undefined),
+    randomAudioFilename:
+      audioFilenames?.[Math.floor(Math.random() * audioFilenames.length)]!,
+  };
+
+  return sentence;
 }
 
 export async function searchSentences(searchTerm: string): Promise<Sentence[]> {
@@ -67,28 +104,7 @@ export async function searchSentences(searchTerm: string): Promise<Sentence[]> {
     note[ModelFields.SentKanji]?.includes(searchTerm)
   );
 
-  return matchedItems.map((item) => {
-    const engParts = item[ModelFields.SentEng]?.split(/<br\/?>/);
-    const eng1 = engParts?.[0];
-
-    const audioNames = item[ModelFields.SentAudio]?.split(/<br\/?>/);
-
-    const audioFilenames = audioNames
-      ?.map((name) => parseSound(name))
-      .filter((r) => r !== null)
-      .map((r) => reverseMedia[r]);
-
-    const sentence: Sentence = {
-      searchTerm,
-      sentence: item[ModelFields.SentKanji],
-      furigana: item[ModelFields.VocabFurigana],
-      eng: eng1,
-      audioNames: audioNames,
-      audioFilenames: audioFilenames,
-      randomAudioFilename:
-        audioFilenames?.[Math.floor(Math.random() * audioFilenames.length)]!,
-    };
-
-    return sentence;
-  });
+  return matchedItems
+    .map((item) => makeSentence(searchTerm, item, reverseMedia))
+    .filter((sentence) => sentence !== null);
 }

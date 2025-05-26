@@ -49,7 +49,7 @@ function fishForMeaningTopLevel(item: TopLevelContent): Meaning[] {
   }
 }
 
-async function loadDictionaryFromJson(
+async function loadYomichansFromFile(
   file: string
 ): Promise<YomichanDictEntry[]> {
   const json: any[][] = await Bun.file(file).json();
@@ -69,31 +69,39 @@ async function loadDictionaryFromJson(
   return more;
 }
 
-export async function loadDictionary(): Promise<YomichanDictEntry[]> {
-  // const glob = new Bun.Glob("jitendex-yomitan/term_bank_*.json");
-  const glob = new Bun.Glob("jitendex-yomitan/term_bank_210.json");
+export async function loadYomichanDictionary(): Promise<YomichanDictEntry[]> {
+  const glob = new Bun.Glob("jitendex-yomitan/term_bank_*.json");
+  // const glob = new Bun.Glob("jitendex-yomitan/term_bank_210.json");
   const dictEntries: YomichanDictEntry[] = [];
   for await (const file of glob.scan()) {
-    const more = await loadDictionaryFromJson(file);
+    const more = await loadYomichansFromFile(file);
     dictEntries.push(...more);
   }
   return dictEntries;
 }
 
-interface DictionaryEntry {
+export interface DictionaryEntry {
   expression: string;
   reading: string;
   glossary: Meaning[];
 }
 
-const dictEntries = await loadDictionary();
+export async function loadDictionary(): Promise<
+  Record<string, DictionaryEntry>
+> {
+  const dictEntries = await loadYomichanDictionary();
 
-for (const entry of dictEntries) {
-  const meanings = fishForMeaningTopLevel(entry.glossary[0]!);
-  const dictEntry: DictionaryEntry = {
-    expression: entry.expression,
-    reading: entry.reading,
-    glossary: meanings,
-  };
-  console.log(dictEntry);
+  const b = dictEntries
+    .map((entry) => ({
+      expression: entry.expression,
+      reading: entry.reading,
+      glossary: fishForMeaningTopLevel(entry.glossary[0]!),
+    }))
+    .filter((entry) => entry.glossary.length > 0)
+    .reduce((acc, entry) => {
+      acc[entry.expression] = entry;
+      return acc;
+    }, {} as Record<string, DictionaryEntry>);
+
+  return b;
 }
