@@ -1,0 +1,3 @@
+[submodule "anki-apkg-parser"]
+	path = anki-apkg-parser
+	url = git@github.com:74Genesis/anki-apkg-parser.git
