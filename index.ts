@@ -1,6 +1,18 @@
-import { loadYomichanDictionary } from "./dictionary";
+import { loadDictionary } from "./dictionary";
+import { searchSentences } from "./search_sentence";
 
-const dictEntries = await loadYomichanDictionary();
-console.log(dictEntries);
-const meaning = fishForMeaningTopLevel(dictEntries.at(0)!.glossary.at(0)!);
-console.log(meaning);
+const dictionary = await loadDictionary();
+
+console.log("Enter a word to search for:");
+const input = await Bun.stdin.text();
+const sentences = await searchSentences(input, dictionary);
+
+for (const sentence of sentences) {
+  console.log(sentence);
+}
+
+console.log("Pick which to add:");
+const choice = await Bun.stdin.text();
+const index = parseInt(choice);
+const sentence = sentences[index];
+console.log(sentence);

@@ -86,9 +86,9 @@ export interface DictionaryEntry {
   glossary: Meaning[];
 }
 
-export async function loadDictionary(): Promise<
-  Record<string, DictionaryEntry>
-> {
+export type Dictionary = Record<string, DictionaryEntry>;
+
+export async function loadDictionary(): Promise<Dictionary> {
   const dictEntries = await loadYomichanDictionary();
 
   const b = dictEntries

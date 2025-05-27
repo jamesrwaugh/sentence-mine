@@ -1,5 +1,6 @@
 import { Deck } from "anki-apkg-parser";
 import { UNPACK_PATH } from "./rebuild_unpack";
+import type { Dictionary, DictionaryEntry } from "./dictionary";
 
 // To rebuild the model fields, run the following code:
 // for (const model of Object.values(models)) {
@@ -79,7 +80,15 @@ function makeSentence(
   return sentence;
 }
 
-export async function searchSentences(searchTerm: string): Promise<Sentence[]> {
+export interface Note {
+  sentence: Sentence;
+  dictionary: DictionaryEntry;
+}
+
+export async function searchSentences(
+  searchTerm: string,
+  dictionary: Dictionary
+): Promise<Note[]> {
   const deck = new Deck(UNPACK_PATH);
 
   await deck.dbOpen();
@@ -104,7 +113,14 @@ export async function searchSentences(searchTerm: string): Promise<Sentence[]> {
     note[ModelFields.SentKanji]?.includes(searchTerm)
   );
 
-  return matchedItems
+  const d = matchedItems
     .map((item) => makeSentence(searchTerm, item, reverseMedia))
-    .filter((sentence) => sentence !== null);
+    .filter((sentence) => sentence !== null)
+    .map((sentence) => ({
+      sentence,
+      dictionary: dictionary[sentence.searchTerm]!,
+    }))
+    .filter((note) => note.dictionary !== undefined);
+
+  return d;
 }
