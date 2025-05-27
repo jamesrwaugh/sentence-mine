@@ -6,6 +6,8 @@ export interface CsvItem {
   絵: string;
   例文: string;
   ノートID: string;
+  NoteImage: string;
+  Error: string;
 }
 
 export async function loadCsv(): Promise<CsvItem[]> {

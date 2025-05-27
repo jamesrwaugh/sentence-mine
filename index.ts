@@ -1,7 +1,7 @@
-import { addNote } from "./ankiconnect";
+import { addImage, addNote } from "./ankiconnect";
 import { tryDownloadJpod101Audio } from "./audio";
 import { loadDictionary, type Dictionary } from "./dictionary";
-import { input, loadCsv, saveCsv } from "./io";
+import { input, loadCsv, saveCsv, type CsvItem } from "./io";
 import {
   loadSentenceDeck,
   searchSentences,
@@ -14,14 +14,15 @@ interface AddResult {
 }
 
 async function processAddNewNote(
-  term: string,
+  row: CsvItem,
   deck: SentenceDeck,
   dictionary: Dictionary
 ): Promise<AddResult | null> {
-  const sentences = await searchSentences(term, deck, dictionary);
+  const { 漢字, 絵 } = row;
+  const sentences = await searchSentences(漢字, deck, dictionary);
 
   if (sentences.length === 0) {
-    console.log(`No sentences found for ${term}. Is it dictionary form?`);
+    console.log(`No sentences found for ${漢字}. Is it dictionary form?`);
     return null;
   }
 
@@ -69,6 +70,21 @@ async function processAddNewNote(
   return null;
 }
 
+async function processAddImage(row: CsvItem): Promise<boolean> {
+  try {
+    const nid = parseInt(row.ノートID);
+    if (isNaN(nid)) {
+      console.log("No nid");
+      return false;
+    }
+    await addImage(nid, row.漢字, row.絵);
+    return true;
+  } catch (e) {
+    console.log("AnkiConnect addImage:", (e as Error)?.message ?? e);
+    return false;
+  }
+}
+
 async function main() {
   console.log("Loading dictionary...");
   const dictionary = await loadDictionary();
@@ -78,12 +94,30 @@ async function main() {
 
   const items = await loadCsv();
 
-  for (const row of items.filter((r) => r.ノートID === "").slice(0, 3)) {
-    console.log(`${row.漢字} ....`);
-    const result = await processAddNewNote(row.漢字, deck, dictionary);
+  const unadded = items
+    .filter((r) => r.Error === "")
+    .filter((r) => r.ノートID === "");
+
+  for (const row of unadded) {
+    console.log(`New: ${row.漢字} ....`);
+    const result = await processAddNewNote(row, deck, dictionary);
     if (result != null) {
       row.ノートID = result.nid.toString();
       row.例文 = result.sentence;
+    } else {
+      console.log("No result");
+    }
+  }
+
+  const addedWithImageUpdates = items
+    .filter((r) => r.Error === "")
+    .filter((r) => r.ノートID !== "" && r.絵 !== "" && r.NoteImage !== r.絵);
+
+  for (const row of addedWithImageUpdates) {
+    console.log(`New Image: ${row.漢字} ....`);
+    const result = await processAddImage(row);
+    if (result) {
+      row.NoteImage = row.絵;
     }
   }
 

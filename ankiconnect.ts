@@ -41,6 +41,12 @@ export async function addNote(deckName: string, modelName: string, note: Note) {
         fields: ["Sentence-Audio"],
       } as any,
     ],
+    options: {
+      duplicateScope: "deck",
+      duplicateScopeOptions: {
+        deckName: deckName,
+      },
+    },
   };
 
   if (note.readingAudioFilename) {
@@ -56,4 +62,24 @@ export async function addNote(deckName: string, modelName: string, note: Note) {
   });
 
   return nid;
+}
+
+export async function addImage(nid: number, kanji: string, image: string) {
+  const imagePath = `/home/james/Desktop/Git/sentence-mine/image-temp/${image}`;
+  const imageData = await Bun.file(imagePath).arrayBuffer();
+  const imageBase64 = Buffer.from(imageData).toString("base64");
+
+  await client.note.updateNote({
+    note: {
+      fields: {},
+      picture: [
+        {
+          filename: `${kanji}_${image}`,
+          data: imageBase64,
+          fields: ["Picture"],
+        } as any,
+      ],
+      id: nid,
+    },
+  });
 }
