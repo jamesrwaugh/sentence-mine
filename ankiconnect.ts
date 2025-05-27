@@ -41,6 +41,7 @@ export async function addNote(deckName: string, modelName: string, note: Note) {
         fields: ["Sentence-Audio"],
       } as any,
     ],
+    tags: ["mined"],
     options: {
       duplicateScope: "deck",
       duplicateScopeOptions: {

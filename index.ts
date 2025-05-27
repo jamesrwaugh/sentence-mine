@@ -50,7 +50,7 @@ async function processAddNewNote(
   }
 
   try {
-    const nid = await addNote("Sentence Mine", "core2.3k-anime-card", {
+    const nid = await addNote("Core2.3k Version 3", "core2.3k-anime-card", {
       ...note,
       readingAudioFilename,
     });
