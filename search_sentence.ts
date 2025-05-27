@@ -62,7 +62,7 @@ function makeSentence(
     !item[ModelFields.SentKanji] ||
     !audioNames ||
     !audioFilenames ||
-    !audioFilenames.some((r) => r === undefined)
+    audioFilenames.some((r) => r === undefined)
   ) {
     return null;
   }

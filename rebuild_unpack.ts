@@ -1,6 +1,6 @@
 import { Unpack } from "anki-apkg-parser";
 
-const deckPath = "./Ankidrone Sentence Pack V4.apkg.zip";
+const deckPath = "./Ankidrone Sentence Pack V4.apkg";
 export const UNPACK_PATH = "./deck-folder";
 
 async function unpackDeck() {
@@ -11,5 +11,3 @@ async function unpackDeck() {
     console.error(error);
   }
 }
-
-await unpackDeck();
