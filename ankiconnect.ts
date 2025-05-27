@@ -36,7 +36,7 @@ export async function addNote(deckName: string, modelName: string, note: Note) {
     },
     audio: [
       {
-        filename: `比較_sentence_${note.sentence.randomAudioFilename}.mp3`,
+        filename: `${note.sentence.searchTerm}_sentence_${note.sentence.randomAudioFilename}.mp3`,
         path: `/home/james/Desktop/Git/sentence-mine/deck-folder/${note.sentence.randomAudioFilename}`,
         fields: ["Sentence-Audio"],
       } as any,
@@ -45,7 +45,7 @@ export async function addNote(deckName: string, modelName: string, note: Note) {
 
   if (note.readingAudioFilename) {
     item.audio!.push({
-      filename: "比較_reading.mp3",
+      filename: `${note.sentence.searchTerm}_reading.mp3`,
       path: `/home/james/Desktop/Git/sentence-mine/${note.readingAudioFilename}`,
       fields: ["Audio"],
     } as any);

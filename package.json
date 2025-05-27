@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "anki-apkg-parser": "./anki-apkg-parser/",
+    "csv": "^6.3.11",
+    "csv-parser": "^3.2.0",
+    "install": "^0.13.0",
     "mecab-ya": "^0.1.1",
     "yanki-connect": "^2.2.3"
   }

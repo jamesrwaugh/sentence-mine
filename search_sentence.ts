@@ -1,6 +1,7 @@
 import { Deck } from "anki-apkg-parser";
 import { UNPACK_PATH } from "./rebuild_unpack";
 import type { Dictionary, DictionaryEntry } from "./dictionary";
+import type INote from "anki-apkg-parser/src/core/interfaces/INote";
 
 // To rebuild the model fields, run the following code:
 // for (const model of Object.values(models)) {
@@ -85,15 +86,22 @@ export interface Note {
   dictionary: DictionaryEntry;
 }
 
-export async function searchSentences(
-  searchTerm: string,
-  dictionary: Dictionary
-): Promise<Note[]> {
+export interface SentenceDeck {
+  notes: Record<string, INote>;
+  media: Record<string /*term*/, string /*filename*/>;
+  noteFields: string[][];
+}
+
+export async function loadSentenceDeck(): Promise<SentenceDeck> {
   const deck = new Deck(UNPACK_PATH);
 
   await deck.dbOpen();
 
   const notes = await deck.anki21b?.getNotes();
+
+  if (!notes) {
+    throw new Error("No notes found in anki21b - old format?");
+  }
 
   const media = await deck.getMedia();
 
@@ -101,20 +109,34 @@ export async function searchSentences(
     Object.entries(media).map(([key, value]) => [value, key])
   );
 
-  if (!notes) {
-    throw new Error("No notes found");
-  }
-
   const noteFields = Object.values(notes).map((note) =>
     (note.flds as string).split("\x1f")
   );
+
+  return {
+    notes,
+    media: reverseMedia,
+    noteFields,
+  };
+}
+
+export async function searchSentences(
+  searchTerm: string,
+  deck: SentenceDeck,
+  dictionary: Dictionary
+): Promise<Note[]> {
+  const { notes, media, noteFields } = deck;
+
+  if (!notes) {
+    throw new Error("No notes found");
+  }
 
   const matchedItems = noteFields.filter((note) =>
     note[ModelFields.SentKanji]?.includes(searchTerm)
   );
 
   const d = matchedItems
-    .map((item) => makeSentence(searchTerm, item, reverseMedia))
+    .map((item) => makeSentence(searchTerm, item, media))
     .filter((sentence) => sentence !== null)
     .map((sentence) => ({
       sentence,
