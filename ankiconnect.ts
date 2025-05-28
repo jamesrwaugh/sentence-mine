@@ -39,7 +39,7 @@ export async function addNote(deckName: string, modelName: string, note: Note) {
         filename: `${note.sentence.searchTerm}_sentence_${note.sentence.randomAudioFilename}.mp3`,
         path: `/home/james/Desktop/Git/sentence-mine/deck-folder/${note.sentence.randomAudioFilename}`,
         fields: ["Sentence-Audio"],
-      } as any,
+      },
     ],
     tags: ["mined"],
     options: {
@@ -55,7 +55,7 @@ export async function addNote(deckName: string, modelName: string, note: Note) {
       filename: `${note.sentence.searchTerm}_reading.mp3`,
       path: `/home/james/Desktop/Git/sentence-mine/${note.readingAudioFilename}`,
       fields: ["Audio"],
-    } as any);
+    });
   }
 
   const nid = await client.note.addNote({
@@ -78,7 +78,7 @@ export async function addImage(nid: number, kanji: string, image: string) {
           filename: `${kanji}_${image}`,
           data: imageBase64,
           fields: ["Picture"],
-        } as any,
+        },
       ],
       id: nid,
     },
