@@ -7,7 +7,7 @@ import type INote from "anki-apkg-parser/src/core/interfaces/INote";
 // for (const model of Object.values(models)) {
 //   console.log(model.flds.map((fld) => fld.name));
 // }
-enum ModelFields {
+export enum ModelFields {
   SentKanji = 0,
   SentFurigana = 1,
   SentEng = 2,
