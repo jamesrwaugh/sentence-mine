@@ -1,5 +1,6 @@
 import { addImage, addNote } from "./ankiconnect";
 import { tryDownloadJpod101Audio } from "./audio";
+import { loadDictformIndex, type DictformIndex } from "./dictform_index";
 import { loadDictionary, type Dictionary } from "./dictionary";
 import { input, loadCsv, saveCsv, type CsvItem } from "./io";
 import {
@@ -20,10 +21,17 @@ type AddResult =
 async function processAddNewNote(
   row: CsvItem,
   deck: SentenceDeck,
-  dictionary: Dictionary
+  dictionary: Dictionary,
+  dictformIndex: DictformIndex
 ): Promise<AddResult> {
   const { 漢字 } = row;
-  const sentences = await searchSentences(漢字, deck, dictionary);
+
+  const sentences = await searchSentences(
+    漢字,
+    deck,
+    dictionary,
+    dictformIndex
+  );
 
   if (sentences.length === 0) {
     console.log(`No sentences found for ${漢字}. Is it dictionary form?`);
@@ -106,12 +114,16 @@ async function processAddImage(row: CsvItem): Promise<boolean> {
 }
 
 async function main() {
+  console.log("Loading dictform index...");
+  const dictformIndex = await loadDictformIndex("dictform_index.json");
+
   console.log("Loading dictionary...");
   const dictionary = await loadDictionary();
 
   console.log("Loading deck...");
   const deck = await loadSentenceDeck();
 
+  console.log("Loading CSV...");
   const items = await loadCsv();
 
   const unadded = items
@@ -120,7 +132,14 @@ async function main() {
 
   for (const row of unadded) {
     console.log(`New: ${row.漢字} ....`);
-    const result = await processAddNewNote(row, deck, dictionary);
+
+    const result = await processAddNewNote(
+      row,
+      deck,
+      dictionary,
+      dictformIndex
+    );
+
     if ("nid" in result) {
       row.ノートID = result.nid.toString();
       row.例文 = result.sentence;

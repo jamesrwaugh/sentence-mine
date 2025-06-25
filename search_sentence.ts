@@ -2,6 +2,7 @@ import { Deck } from "anki-apkg-parser";
 import { UNPACK_PATH } from "./rebuild_unpack";
 import type { Dictionary, DictionaryEntry } from "./dictionary";
 import type INote from "anki-apkg-parser/src/core/interfaces/INote";
+import type { DictformIndex } from "./dictform_index";
 
 // To rebuild the model fields, run the following code:
 // for (const model of Object.values(models)) {
@@ -123,7 +124,8 @@ export async function loadSentenceDeck(): Promise<SentenceDeck> {
 export async function searchSentences(
   searchTerm: string,
   deck: SentenceDeck,
-  dictionary: Dictionary
+  dictionary: Dictionary,
+  dictformIndex: DictformIndex
 ): Promise<Note[]> {
   const { notes, media, noteFields } = deck;
 
@@ -131,9 +133,23 @@ export async function searchSentences(
     throw new Error("No notes found");
   }
 
-  const matchedItems = noteFields.filter((note) =>
-    note[ModelFields.SentKanji]?.includes(searchTerm)
-  );
+  let matchedItems: string[][] = [];
+  const dictFormIndicies = dictformIndex[searchTerm];
+
+  if (dictFormIndicies) {
+    matchedItems = dictFormIndicies.map(
+      (sentenceIndex) => noteFields[sentenceIndex]!
+    );
+  } else {
+    matchedItems = noteFields.filter((note) =>
+      note[ModelFields.SentKanji]?.includes(searchTerm)
+    );
+  }
+
+  if (matchedItems.length === 0) {
+    console.log(`No matched items found for ${searchTerm}`);
+    return [];
+  }
 
   const d = matchedItems
     .map((item) => makeSentence(searchTerm, item, media))
