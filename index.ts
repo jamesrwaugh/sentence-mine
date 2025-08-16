@@ -1,5 +1,5 @@
 import { addImage, addNote } from "./ankiconnect";
-import { tryDownloadJpod101Audio } from "./audio";
+import { tryDownloadTermAudio } from "./audio";
 import { loadDictformIndex, type DictformIndex } from "./dictform_index";
 import { loadDictionary, type Dictionary } from "./dictionary";
 import { input, loadCsv, saveCsv, type CsvItem } from "./io";
@@ -55,7 +55,7 @@ async function processAddNewNote(
     };
   }
 
-  const readingAudioFilename = await tryDownloadJpod101Audio(
+  const readingAudioFilename = await tryDownloadTermAudio(
     note.dictionary.expression,
     note.dictionary.reading
   );
