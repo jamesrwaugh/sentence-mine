@@ -1,13 +1,12 @@
 import { YankiConnect } from "yanki-connect";
-import type { Sentence } from "./search_sentence";
+import type { DictNote } from "./search_sentence";
 import type { DictionaryEntry } from "./dictionary";
 
 const client = new YankiConnect();
 
-interface Note {
-  sentence: Sentence;
-  dictionary: DictionaryEntry;
-  readingAudioFilename: string | undefined;
+export interface NoteWithAudio {
+  note: DictNote;
+  audioFilename: string;
 }
 
 function makeGlossary(glossary: DictionaryEntry["glossary"]): string {
@@ -23,7 +22,13 @@ function makeGlossary(glossary: DictionaryEntry["glossary"]): string {
     .join("<br>");
 }
 
-export async function addNote(deckName: string, modelName: string, note: Note) {
+export async function addNote(
+  deckName: string,
+  modelName: string,
+  noteWithAudio: NoteWithAudio
+) {
+  const { note, audioFilename } = noteWithAudio;
+
   const item: Parameters<typeof client.note.addNote>[0]["note"] = {
     deckName,
     modelName,
@@ -40,6 +45,11 @@ export async function addNote(deckName: string, modelName: string, note: Note) {
         path: `/home/james/Desktop/Git/sentence-mine/deck-folder/${note.sentence.randomAudioFilename}`,
         fields: ["Sentence-Audio"],
       },
+      {
+        filename: `${note.sentence.searchTerm}_reading.mp3`,
+        path: `/home/james/Desktop/Git/sentence-mine/${audioFilename}`,
+        fields: ["Audio"],
+      },
     ],
     tags: ["mined"],
     options: {
@@ -50,15 +60,44 @@ export async function addNote(deckName: string, modelName: string, note: Note) {
     },
   };
 
-  if (note.readingAudioFilename) {
-    item.audio!.push({
-      filename: `${note.sentence.searchTerm}_reading.mp3`,
-      path: `/home/james/Desktop/Git/sentence-mine/${note.readingAudioFilename}`,
-      fields: ["Audio"],
-    });
-  }
-
   const nid = await client.note.addNote({
+    note: item,
+  });
+
+  return nid;
+}
+
+export async function updateNote(
+  existingNid: number,
+  noteWithAudio: NoteWithAudio
+): Promise<null> {
+  const { note, audioFilename } = noteWithAudio;
+
+  const item: Parameters<typeof client.note.updateNote>[0]["note"] = {
+    id: existingNid,
+    fields: {
+      Word: note.sentence.searchTerm,
+      Reading: note.dictionary.reading,
+      Glossary: makeGlossary(note.dictionary.glossary),
+      Sentence: note.sentence.sentence,
+      "Sentence-English": note.sentence.eng,
+    },
+    audio: [
+      {
+        filename: `${note.sentence.searchTerm}_sentence_${note.sentence.randomAudioFilename}.mp3`,
+        path: `/home/james/Desktop/Git/sentence-mine/deck-folder/${note.sentence.randomAudioFilename}`,
+        fields: ["Sentence-Audio"],
+      },
+      {
+        filename: `${note.sentence.searchTerm}_reading.mp3`,
+        path: `/home/james/Desktop/Git/sentence-mine/${audioFilename}`,
+        fields: ["Audio"],
+      },
+    ],
+    tags: ["mined"],
+  };
+
+  const nid = await client.note.updateNote({
     note: item,
   });
 
@@ -83,4 +122,15 @@ export async function addImage(nid: number, kanji: string, image: string) {
       id: nid,
     },
   });
+}
+
+export async function searchFirstNoteId(
+  deckName: string,
+  vocabTerm: string
+): Promise<number | undefined> {
+  const notes = await client.note.findNotes({
+    query: `"deck:${deckName}" "Word:${vocabTerm}"`,
+  });
+
+  return notes[0];
 }

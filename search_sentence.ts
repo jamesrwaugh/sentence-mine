@@ -82,7 +82,7 @@ function makeSentence(
   return sentence;
 }
 
-export interface Note {
+export interface DictNote {
   sentence: Sentence;
   dictionary: DictionaryEntry;
 }
@@ -126,7 +126,7 @@ export async function searchSentences(
   deck: SentenceDeck,
   dictionary: Dictionary,
   dictformIndex: DictformIndex
-): Promise<Note[]> {
+): Promise<DictNote[]> {
   const { notes, media, noteFields } = deck;
 
   if (!notes) {

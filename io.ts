@@ -33,7 +33,7 @@ export async function saveCsv(items: CsvItem[]) {
     header: true,
   });
 
-  await Bun.write("/home/james/Dropbox/SentenceMine_2.csv", csv);
+  await Bun.write("/home/james/Dropbox/SentenceMine.csv", csv);
 }
 
 export async function input(prompt: string): Promise<number> {
