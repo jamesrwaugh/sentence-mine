@@ -1,6 +1,12 @@
 import { YankiConnect } from "yanki-connect";
 import type { DictNote } from "./search_sentence";
 import type { DictionaryEntry } from "./dictionary";
+import {
+  FindRtkKeywordsJoinedComma,
+  type RtkKeywordLine,
+} from "./rtk_keywords";
+import { DataPaths } from "./IDataItems";
+import { join, resolve } from "node:path";
 
 const client = new YankiConnect();
 
@@ -22,12 +28,35 @@ function makeGlossary(glossary: DictionaryEntry["glossary"]): string {
     .join("<br>");
 }
 
+function resolveAudioPaths(
+  audioFilename: string,
+  sentenceAudioFilename: string
+) {
+  const sentenceAudioPath = join(DataPaths.deckFolder, sentenceAudioFilename);
+
+  const audioPath = join(DataPaths.audioTempFolder, audioFilename);
+
+  return {
+    absoluteSentenceAudioPath: resolve(process.cwd(), sentenceAudioPath),
+    absoluteAuthPath: resolve(process.cwd(), audioPath),
+  };
+}
+
 export async function addNote(
   deckName: string,
   modelName: string,
-  noteWithAudio: NoteWithAudio
+  noteWithAudio: NoteWithAudio,
+  rtkKeywords: RtkKeywordLine[]
 ) {
   const { note, audioFilename } = noteWithAudio;
+
+  const { absoluteSentenceAudioPath, absoluteAuthPath } = resolveAudioPaths(
+    audioFilename,
+    note.sentence.randomAudioFilename
+  );
+
+  console.log("absoluteSentenceAudioPath", absoluteSentenceAudioPath);
+  console.log("absoluteAuthPath", absoluteAuthPath);
 
   const item: Parameters<typeof client.note.addNote>[0]["note"] = {
     deckName,
@@ -38,16 +67,20 @@ export async function addNote(
       Glossary: makeGlossary(note.dictionary.glossary),
       Sentence: note.sentence.sentence,
       "Sentence-English": note.sentence.eng,
+      WordRtkKeywords: FindRtkKeywordsJoinedComma(
+        note.sentence.searchTerm,
+        rtkKeywords
+      ),
     },
     audio: [
       {
         filename: `${note.sentence.searchTerm}_sentence_${note.sentence.randomAudioFilename}.mp3`,
-        path: `/home/james/Desktop/Git/sentence-mine/deck-folder/${note.sentence.randomAudioFilename}`,
+        path: absoluteSentenceAudioPath,
         fields: ["Sentence-Audio"],
       },
       {
         filename: `${note.sentence.searchTerm}_reading.mp3`,
-        path: `/home/james/Desktop/Git/sentence-mine/${audioFilename}`,
+        path: absoluteAuthPath,
         fields: ["Audio"],
       },
     ],
@@ -73,6 +106,11 @@ export async function updateNote(
 ): Promise<null> {
   const { note, audioFilename } = noteWithAudio;
 
+  const { absoluteSentenceAudioPath, absoluteAuthPath } = resolveAudioPaths(
+    audioFilename,
+    note.sentence.randomAudioFilename
+  );
+
   const item: Parameters<typeof client.note.updateNote>[0]["note"] = {
     id: existingNid,
     fields: {
@@ -85,12 +123,12 @@ export async function updateNote(
     audio: [
       {
         filename: `${note.sentence.searchTerm}_sentence_${note.sentence.randomAudioFilename}.mp3`,
-        path: `/home/james/Desktop/Git/sentence-mine/deck-folder/${note.sentence.randomAudioFilename}`,
+        path: absoluteSentenceAudioPath,
         fields: ["Sentence-Audio"],
       },
       {
         filename: `${note.sentence.searchTerm}_reading.mp3`,
-        path: `/home/james/Desktop/Git/sentence-mine/${audioFilename}`,
+        path: absoluteAuthPath,
         fields: ["Audio"],
       },
     ],
@@ -105,7 +143,7 @@ export async function updateNote(
 }
 
 export async function addImage(nid: number, kanji: string, image: string) {
-  const imagePath = `/home/james/Desktop/Git/sentence-mine/image-temp/${image}`;
+  const imagePath = join(DataPaths.imageTempFolder, image);
   const imageData = await Bun.file(imagePath).arrayBuffer();
   const imageBase64 = Buffer.from(imageData).toString("base64");
 

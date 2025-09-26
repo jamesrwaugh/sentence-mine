@@ -69,5 +69,3 @@ async function BeCool() {
 
   Bun.write("spurious_words.json", JSON.stringify([...diff]));
 }
-
-await BeCool();

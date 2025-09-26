@@ -1,8 +1,8 @@
 import { Deck } from "anki-apkg-parser";
-import { UNPACK_PATH } from "./rebuild_unpack";
 import type { Dictionary, DictionaryEntry } from "./dictionary";
 import type INote from "anki-apkg-parser/src/core/interfaces/INote";
 import type { DictformIndex } from "./dictform_index";
+import { DataPaths, type IDataItems } from "./IDataItems";
 
 // To rebuild the model fields, run the following code:
 // for (const model of Object.values(models)) {
@@ -94,7 +94,7 @@ export interface SentenceDeck {
 }
 
 export async function loadSentenceDeck(): Promise<SentenceDeck> {
-  const deck = new Deck(UNPACK_PATH);
+  const deck = new Deck(DataPaths.deckFolder);
 
   await deck.dbOpen();
 
@@ -123,10 +123,10 @@ export async function loadSentenceDeck(): Promise<SentenceDeck> {
 
 export async function searchSentences(
   searchTerm: string,
-  deck: SentenceDeck,
-  dictionary: Dictionary,
-  dictformIndex: DictformIndex
+  dataItems: IDataItems
 ): Promise<DictNote[]> {
+  const { dictionary, deck, dictFormIndex } = dataItems;
+
   const { notes, media, noteFields } = deck;
 
   if (!notes) {
@@ -134,7 +134,7 @@ export async function searchSentences(
   }
 
   let matchedItems: string[][] = [];
-  const dictFormIndicies = dictformIndex[searchTerm];
+  const dictFormIndicies = dictFormIndex[searchTerm];
 
   if (dictFormIndicies) {
     matchedItems = dictFormIndicies.map(

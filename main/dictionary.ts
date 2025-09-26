@@ -1,8 +1,10 @@
+import { join } from "node:path";
 import type {
   ContentWTag,
   TopLevelContent,
   YomichanDictEntry,
 } from "./dictionary_type";
+import { DataPaths } from "./IDataItems";
 
 function getGlossaryContents(item: ContentWTag): string[] {
   if (Array.isArray(item.content)) {
@@ -70,13 +72,17 @@ async function loadYomichansFromFile(
 }
 
 export async function loadYomichanDictionary(): Promise<YomichanDictEntry[]> {
-  const glob = new Bun.Glob("jitendex-yomitan/term_bank_*.json");
-  // const glob = new Bun.Glob("jitendex-yomitan/term_bank_210.json");
+  const glob = new Bun.Glob(
+    join(DataPaths.jitendexYomitanFolder, "term_bank_*.json")
+  );
+
   const dictEntries: YomichanDictEntry[] = [];
+
   for await (const file of glob.scan()) {
     const more = await loadYomichansFromFile(file);
     dictEntries.push(...more);
   }
+
   return dictEntries;
 }
 

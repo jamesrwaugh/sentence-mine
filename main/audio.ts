@@ -1,3 +1,6 @@
+import { DataPaths } from "./IDataItems";
+import { join } from "node:path";
+
 const HIRAGANA_RANGE: [number, number] = [0x3040, 0x309f];
 const KATAKANA_RANGE: [number, number] = [0x30a0, 0x30ff];
 
@@ -145,8 +148,8 @@ export async function tryDownloadTermAudio(
   for (const method of methods) {
     const info = await method(term, reading);
     if (info.valid) {
-      const filename = `audio-temp/${term}.mp3`;
-      await Bun.write(filename, info.audio);
+      const filename = `${term}.mp3`;
+      await Bun.write(join(DataPaths.audioTempFolder, filename), info.audio);
       return filename;
     }
   }

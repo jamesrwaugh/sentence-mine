@@ -1,10 +1,5 @@
 # Mine
-deck-folder
-jitendex-yomitan
-Ankidrone Sentence Pack V4.apkg
-audio-temp
-jitendex-yomitan.zip
-image-temp
+data/
 
 # dependencies (bun install)
 node_modules

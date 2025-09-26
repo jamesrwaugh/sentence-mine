@@ -1,9 +1,10 @@
 import { Unpack } from "anki-apkg-parser";
-
-const deckPath = "./Ankidrone Sentence Pack V4.apkg";
-export const UNPACK_PATH = "./deck-folder";
+import { DataPaths } from "../main/IDataItems";
 
 async function unpackDeck() {
+  const deckPath = DataPaths.ankiDroneSentencePackApkg;
+  const UNPACK_PATH = DataPaths.deckFolder;
+
   try {
     const unpack = new Unpack();
     await unpack.unpack(deckPath, UNPACK_PATH);

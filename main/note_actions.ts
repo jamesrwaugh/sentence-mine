@@ -5,14 +5,10 @@ import {
   updateNote,
 } from "./ankiconnect";
 import { tryDownloadTermAudio } from "./audio";
-import type { DictformIndex } from "./dictform_index";
-import type { Dictionary } from "./dictionary";
-import { type CsvItem, input } from "./io";
-import {
-  type DictNote,
-  type SentenceDeck,
-  searchSentences,
-} from "./search_sentence";
+import type { IDataItems } from "./IDataItems";
+import { type InCsvItem, input } from "./io";
+import type { RtkKeywordLine } from "./rtk_keywords";
+import { type DictNote, searchSentences } from "./search_sentence";
 
 type AddResult =
   | {
@@ -25,20 +21,26 @@ type AddResult =
 
 async function addTheNote(
   note: DictNote,
-  audioFilename: string
+  audioFilename: string,
+  rtkKeywords: RtkKeywordLine[]
 ): Promise<AddResult> {
   try {
-    const nid = await addNote("Core2.3k Version 3", "core2.3k-anime-card", {
-      note,
-      audioFilename,
-    });
+    const nid = await addNote(
+      "Core2.3k Version 3",
+      "core2.3k-anime-card",
+      { note, audioFilename },
+      rtkKeywords
+    );
+
     if (nid == null) {
       console.log("AnkiConnect: No nid");
       return {
         error: "no-nid",
       };
     }
+
     console.log("AnkiConnect:", nid);
+
     return {
       nid,
       sentence: note.sentence.sentence,
@@ -86,19 +88,12 @@ async function updateTheNote(
 
 export async function processAddNewOrUpdateNote(
   deckName: string,
-  row: CsvItem,
-  deck: SentenceDeck,
-  dictionary: Dictionary,
-  dictformIndex: DictformIndex
+  row: InCsvItem,
+  dataItems: IDataItems
 ): Promise<AddResult> {
   const { 漢字 } = row;
 
-  const sentences = await searchSentences(
-    漢字,
-    deck,
-    dictionary,
-    dictformIndex
-  );
+  const sentences = await searchSentences(漢字, dataItems);
 
   if (sentences.length === 0) {
     console.log(`No sentences found for ${漢字}. Is it dictionary form?`);
@@ -113,8 +108,8 @@ export async function processAddNewOrUpdateNote(
     );
   });
 
-  const index = await input("Pick which to add: ");
-  const note = sentences[index];
+  // const index = await input("Pick which to add: ");
+  const note = sentences[5];
 
   if (note == undefined) {
     return {
@@ -140,14 +135,14 @@ export async function processAddNewOrUpdateNote(
   );
 
   if (existingNid == undefined) {
-    return await addTheNote(note, readingAudioFilename);
+    return await addTheNote(note, readingAudioFilename, dataItems.rtkKeywords);
   } else {
     console.log("Updating existing note", existingNid);
     return await updateTheNote(existingNid, note, readingAudioFilename);
   }
 }
 
-export async function processAddImage(row: CsvItem): Promise<boolean> {
+export async function processAddImage(row: InCsvItem): Promise<boolean> {
   try {
     const nid = parseInt(row.ノートID);
     if (isNaN(nid)) {
@@ -162,6 +157,6 @@ export async function processAddImage(row: CsvItem): Promise<boolean> {
   }
 }
 
-export function getNoteId(row: CsvItem): number {
+export function getNoteId(row: InCsvItem): number {
   return parseInt(row.ノートID);
 }
