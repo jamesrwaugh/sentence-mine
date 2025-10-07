@@ -55,9 +55,6 @@ export async function addNote(
     note.sentence.randomAudioFilename
   );
 
-  console.log("absoluteSentenceAudioPath", absoluteSentenceAudioPath);
-  console.log("absoluteAuthPath", absoluteAuthPath);
-
   const item: Parameters<typeof client.note.addNote>[0]["note"] = {
     deckName,
     modelName,
