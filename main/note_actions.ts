@@ -96,7 +96,7 @@ export async function processAddNewOrUpdateNote(
   const sentences = await searchSentences(漢字, dataItems);
 
   if (sentences.length === 0) {
-    console.log(`No sentences found for ${漢字}. Is it dictionary form?`);
+    console.log(`No sentences found for ${漢字}`);
     return {
       error: "no-sentence",
     };
@@ -108,8 +108,8 @@ export async function processAddNewOrUpdateNote(
     );
   });
 
-  // const index = await input("Pick which to add: ");
-  const note = sentences[5];
+  const index = await input("Pick which to add: ");
+  const note = sentences[index];
 
   if (note == undefined) {
     return {
