@@ -34,16 +34,22 @@ export async function saveCsv(items: InCsvItem[]) {
   await Bun.write(DataPaths.inputCsv, csv);
 }
 
-export async function input(prompt: string): Promise<number> {
+export async function input(prompt: string): Promise<number | null> {
   process.stdout.write(prompt);
 
   for await (const line of console) {
+    if (line == "n") {
+      return null;
+    }
+
     const index = parseInt(line);
+
     if (isNaN(index)) {
       console.log(`"${line}" is not a number`);
       process.stdout.write(prompt);
       continue;
     }
+
     return index;
   }
 

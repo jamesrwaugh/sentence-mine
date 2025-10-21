@@ -28,7 +28,7 @@ function CheckForDataErrors(dataItems: IDataItems) {
   }
 }
 
-async function main() {
+async function loadDataItems(): Promise<IDataItems> {
   console.log("Loading dictform index...");
   const dictFormIndex = await loadDictformIndex(DataPaths.dictformIndex);
 
@@ -37,9 +37,6 @@ async function main() {
 
   console.log("Loading deck...");
   const deck = await loadSentenceDeck();
-
-  console.log("Loading CSV...");
-  const items = await loadCsv();
 
   console.log("Loading RTK keywords...");
   const rtkKeywords = await GetJouyouRtkKeywords();
@@ -52,6 +49,15 @@ async function main() {
   };
 
   CheckForDataErrors(dataItems);
+
+  return dataItems;
+}
+
+async function main() {
+  const dataItems = await loadDataItems();
+
+  console.log("Loading CSV...");
+  const items = await loadCsv();
 
   const unadded = items
     .filter((r) => r.Error === "")

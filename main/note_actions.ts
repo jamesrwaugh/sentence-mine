@@ -16,7 +16,12 @@ type AddResult =
       sentence: string;
     }
   | {
-      error: "duplicate" | "no-sentence" | "no-audio" | "no-nid";
+      error:
+        | "duplicate"
+        | "no-sentence"
+        | "no-audio"
+        | "no-nid"
+        | "user-skipped";
     };
 
 async function addTheNote(
@@ -108,8 +113,15 @@ export async function processAddNewOrUpdateNote(
     );
   });
 
-  const index = await input("Pick which to add: ");
-  const note = sentences[index];
+  const indexOrNo = await input("Pick which to add ('n' to skip): ");
+
+  if (indexOrNo == null) {
+    return {
+      error: "user-skipped",
+    };
+  }
+
+  const note = sentences[indexOrNo];
 
   if (note == undefined) {
     return {
