@@ -1,5 +1,5 @@
 import { YankiConnect } from "yanki-connect";
-import { tokenize, tokenizeSync } from "@enjoyjs/node-mecab";
+import { tokenize } from "@enjoyjs/node-mecab";
 
 export interface Welcome {
   noteId: number;
@@ -69,3 +69,10 @@ async function BeCool() {
 
   Bun.write("spurious_words.json", JSON.stringify([...diff]));
 }
+
+async function GetSpuriousWords() {
+  await DumpNotes();
+  await BeCool();
+}
+
+await GetSpuriousWords();
