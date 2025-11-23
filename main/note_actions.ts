@@ -65,7 +65,7 @@ async function addTheNote(
   };
 }
 
-async function updateTheNote(
+export async function updateTheNote(
   existingNid: number,
   note: DictNote,
   audioFilename: string
@@ -98,7 +98,7 @@ export async function processAddNewOrUpdateNote(
 ): Promise<AddResult> {
   const { 漢字 } = row;
 
-  const sentences = await searchSentences(漢字, dataItems);
+  const sentences = searchSentences(漢字, dataItems);
 
   if (sentences.length === 0) {
     console.log(`No sentences found for ${漢字}`);

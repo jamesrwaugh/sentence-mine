@@ -1,5 +1,6 @@
 import { YankiConnect } from "yanki-connect";
 import { tokenize } from "@enjoyjs/node-mecab";
+import { GetMecabWords } from "../main/mecab";
 
 export interface Welcome {
   noteId: number;
@@ -40,18 +41,6 @@ async function DumpNotes() {
   Bun.write("out_notes.json", JSON.stringify(fields));
 }
 
-async function GetWords(text: string) {
-  const tokens = await tokenize(text);
-
-  const badPos = ["助詞", "記号", "BOS/EOS"];
-
-  const items = tokens
-    .filter((t) => t.feature.pos && !badPos.includes(t.feature.pos))
-    .map((t) => t.feature.basicForm || t.surface);
-
-  return items;
-}
-
 async function BeCool() {
   const items: Welcome[] = await Bun.file("out_notes.json").json();
 
@@ -59,7 +48,7 @@ async function BeCool() {
 
   const wordsInSentencesPs = items
     .map((s) => s.fields.Sentence.value)
-    .map((s) => GetWords(s));
+    .map((s) => GetMecabWords(s));
 
   const wordsInSentences = (await Promise.all(wordsInSentencesPs)).flat();
 

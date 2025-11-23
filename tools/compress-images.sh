@@ -11,16 +11,16 @@ if ! command -v magick &> /dev/null; then
 fi
 
 # Check if image-temp directory exists
-if [ ! -d "../data/image-temp" ]; then
+if [ ! -d "./data/image-temp" ]; then
     echo "Error: image-temp directory not found"
     exit 1
 fi
 
 # Process all images in the image-temp directory
-for img in ../data/image-temp/*; do
+for img in ./data/image-temp/*; do
     if [ -f "$img" ]; then
         echo "Processing $img..."
-        magick convert "$img" -resize "500x500>" "$img"
+        magick convert "$img" -resize "500x500>" -quality 80% "$img.jpg"
     fi
 done
 

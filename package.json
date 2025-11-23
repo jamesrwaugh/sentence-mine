@@ -11,11 +11,13 @@
   },
   "dependencies": {
     "@enjoyjs/node-mecab": "^0.5.0",
+    "@google-cloud/text-to-speech": "^6.4.0",
+    "@types/underscore": "^1.13.0",
     "anki-apkg-parser": "./anki-apkg-parser/",
     "csv": "^6.4.1",
     "csv-parser": "^3.2.0",
-    "install": "^0.13.0",
     "mecab-ya": "^0.1.1",
-    "yanki-connect": "^3.0.5"
+    "underscore": "^1.13.7",
+    "yanki-connect": "^3.2.0"
   }
 }

@@ -1,7 +1,6 @@
 import { Deck } from "anki-apkg-parser";
-import type { Dictionary, DictionaryEntry } from "./dictionary";
+import type { DictionaryEntry } from "./dictionary";
 import type INote from "anki-apkg-parser/src/core/interfaces/INote";
-import type { DictformIndex } from "./dictform_index";
 import { DataPaths, type IDataItems } from "./IDataItems";
 
 // To rebuild the model fields, run the following code:
@@ -121,10 +120,10 @@ export async function loadSentenceDeck(): Promise<SentenceDeck> {
   };
 }
 
-export async function searchSentences(
+export function searchSentences(
   searchTerm: string,
   dataItems: IDataItems
-): Promise<DictNote[]> {
+): DictNote[] {
   const { dictionary, deck, dictFormIndex } = dataItems;
 
   const { notes, media, noteFields } = deck;

@@ -121,11 +121,13 @@ export async function updateNote(
       {
         filename: `${note.sentence.searchTerm}_sentence_${note.sentence.randomAudioFilename}.mp3`,
         path: absoluteSentenceAudioPath,
+        replace: true,
         fields: ["Sentence-Audio"],
       },
       {
         filename: `${note.sentence.searchTerm}_reading.mp3`,
         path: absoluteAuthPath,
+        replace: true,
         fields: ["Audio"],
       },
     ],
