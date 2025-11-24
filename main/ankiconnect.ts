@@ -171,3 +171,31 @@ export async function searchFirstNoteId(
 
   return notes[0];
 }
+
+export interface MiniNote<TFieldType> {
+  id: number;
+  fields: TFieldType;
+}
+
+export type AnkiField = {
+  order: number;
+  value: string;
+};
+
+export async function queryNotes<TFieldType>(
+  deckName: string,
+  query: string
+): Promise<MiniNote<TFieldType>[]> {
+  const noteIds = await client.note.findNotes({
+    query: `deck:"${deckName}" ${query}`,
+  });
+
+  const notes = await client.note.notesInfo({
+    notes: noteIds,
+  });
+
+  return notes.map((note) => ({
+    id: note.noteId,
+    fields: note.fields as unknown as TFieldType,
+  }));
+}

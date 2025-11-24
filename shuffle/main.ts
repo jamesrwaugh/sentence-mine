@@ -5,52 +5,25 @@ import { tryDownloadTermAudio } from "../main/audio";
 import { updateTheNote } from "../main/note_actions";
 import { GetMecabWords } from "../main/mecab";
 import { max } from "underscore";
+import { queryNotes, type AnkiField, type MiniNote } from "../main/ankiconnect";
 
 const client = new YankiConnect();
 
 export interface NoteFields {
-  Word: FV;
-  Reading: FV;
-  Glossary: FV;
-  Sentence: FV;
-  "Sentence-English": FV;
-  Picture: FV;
-  Audio: FV;
-  "Sentence-Audio": FV;
-  Hint: FV;
-  WordRtkKeywords: FV;
-}
-
-export interface FV {
-  value: string;
-  order: number;
-}
-
-interface MiniNote {
-  id: number;
-  fields: NoteFields;
-}
-
-async function ankiConnectFindNotes(
-  deckName: string,
-  query: string
-): Promise<MiniNote[]> {
-  const noteIds = await client.note.findNotes({
-    query: `deck:"${deckName}" ${query}`,
-  });
-
-  const notes = await client.note.notesInfo({
-    notes: noteIds,
-  });
-
-  return notes.map((note) => ({
-    id: note.noteId,
-    fields: note.fields as unknown as NoteFields,
-  }));
+  Word: AnkiField;
+  Reading: AnkiField;
+  Glossary: AnkiField;
+  Sentence: AnkiField;
+  "Sentence-English": AnkiField;
+  Picture: AnkiField;
+  Audio: AnkiField;
+  "Sentence-Audio": AnkiField;
+  Hint: AnkiField;
+  WordRtkKeywords: AnkiField;
 }
 
 async function getWordsInMatureCards(deckName: string): Promise<Set<string>> {
-  const notes = await ankiConnectFindNotes(
+  const notes = await queryNotes<NoteFields>(
     deckName,
     "-is:suspended prop:ivl>21"
   );
@@ -66,8 +39,10 @@ async function getWordsInMatureCards(deckName: string): Promise<Set<string>> {
   return uniqueWords;
 }
 
-async function getNotesToUpdate(deckName: string): Promise<MiniNote[]> {
-  const notes = await ankiConnectFindNotes(deckName, "-is:suspended");
+async function getNotesToUpdate(
+  deckName: string
+): Promise<MiniNote<NoteFields>[]> {
+  const notes = await queryNotes<NoteFields>(deckName, "-is:suspended");
 
   const notesWithoutPictures = notes.filter(
     (note) => note.fields["Picture"]?.value === ""
@@ -148,7 +123,7 @@ async function go() {
   const dataItems = await loadDataItems();
   const words = await getWordsInMatureCards(deckName);
 
-  for (const original of notesToUpdate.slice(0, 25)) {
+  for (const original of notesToUpdate.slice(0, 10)) {
     const otherSentences = searchSentences(
       original.fields.Word.value,
       dataItems
@@ -168,6 +143,7 @@ async function go() {
     }
 
     console.log(
+      original.id,
       original.fields.Sentence.value,
       " ----> ",
       bestOther?.sentence.sentence

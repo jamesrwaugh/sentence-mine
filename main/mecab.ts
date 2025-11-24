@@ -10,5 +10,5 @@ export async function GetMecabWords(text: string) {
     .filter((t) => t.feature.pos && !badPos.includes(t.feature.pos))
     .map((t) => t.feature.basicForm || t.surface);
 
-  return items.filter((token) => !formatting.includes(token));
+  return items.filter((item) => !formatting.includes(item));
 }
