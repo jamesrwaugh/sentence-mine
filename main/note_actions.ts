@@ -25,14 +25,16 @@ type AddResult =
     };
 
 async function addTheNote(
+  deckName: string,
+  modelName: string,
   note: DictNote,
   audioFilename: string,
   rtkKeywords: RtkKeywordLine[]
 ): Promise<AddResult> {
   try {
     const nid = await addNote(
-      "Core2.3k Version 3",
-      "core2.3k-anime-card",
+      deckName,
+      modelName,
       { note, audioFilename },
       rtkKeywords
     );
@@ -93,6 +95,7 @@ export async function updateTheNote(
 
 export async function processAddNewOrUpdateNote(
   deckName: string,
+  modelName: string,
   row: InCsvItem,
   dataItems: IDataItems
 ): Promise<AddResult> {
@@ -147,7 +150,13 @@ export async function processAddNewOrUpdateNote(
   );
 
   if (existingNid == undefined) {
-    return await addTheNote(note, readingAudioFilename, dataItems.rtkKeywords);
+    return await addTheNote(
+      deckName,
+      modelName,
+      note,
+      readingAudioFilename,
+      dataItems.rtkKeywords
+    );
   } else {
     console.log("Updating existing note", existingNid);
     return await updateTheNote(existingNid, note, readingAudioFilename);

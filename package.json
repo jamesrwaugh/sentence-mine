@@ -10,14 +10,17 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@ai-sdk/xai": "^2.0.35",
     "@enjoyjs/node-mecab": "^0.5.0",
     "@google-cloud/text-to-speech": "^6.4.0",
     "@types/underscore": "^1.13.0",
+    "ai": "^5.0.101",
     "anki-apkg-parser": "./anki-apkg-parser/",
     "csv": "^6.4.1",
     "csv-parser": "^3.2.0",
     "mecab-ya": "^0.1.1",
     "underscore": "^1.13.7",
-    "yanki-connect": "^3.2.0"
+    "yanki-connect": "^3.2.0",
+    "zod": "^4.1.13"
   }
 }
