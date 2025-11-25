@@ -20,7 +20,7 @@ export interface ClozeNoteFields {
   WordRtkKeywords: AnkiField;
   "Sentence-Audio": AnkiField;
   Picture: AnkiField;
-  PictureFront: AnkiField;
+  English: AnkiField;
   ClozeAudio: AnkiField;
   ClozeAnswer: AnkiField;
   ClozeReading: AnkiField;
@@ -76,6 +76,7 @@ export async function addNote(
       WordRtkKeywords: FindRtkKeywordsJoinedComma(term, rtkKeywords),
       ClozeAnswer: term,
       ClozeReading: termReading,
+      English: sentence.english,
     },
     audio: [
       {
@@ -147,7 +148,7 @@ async function go(
     };
   }
 
-  const sentences = await searchGrok(term, 5);
+  const sentences = await searchGrok(term, 3);
 
   if (sentences == null) {
     console.log("No sentences found for ", term, reading);
