@@ -17,6 +17,7 @@ async function main() {
 
     const result = await processAddNewOrUpdateNote(
       "Core2.3k Version 3",
+      "core2.3k-anime-card",
       row,
       dataItems
     );

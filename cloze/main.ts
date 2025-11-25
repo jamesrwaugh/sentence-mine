@@ -1,6 +1,5 @@
 import { YankiConnect } from "yanki-connect";
 import { type AnkiField } from "../main/ankiconnect";
-import { loadDataItems } from "../main/data_items";
 import { searchGrok } from "./grok";
 import { tryDownloadTermAudio } from "../main/audio";
 import {
@@ -46,6 +45,7 @@ function resolveAudioPaths(
 
 interface Item {
   term: string;
+  termReading: string;
   sentence: z.infer<typeof SentenceSchema>;
   termAudioFilename: string;
   sentenceAudioFilename: string;
@@ -57,7 +57,13 @@ export async function addNote(
   item: Item,
   rtkKeywords: RtkKeywordLine[]
 ) {
-  const { term, sentence, termAudioFilename, sentenceAudioFilename } = item;
+  const {
+    term,
+    termReading,
+    sentence,
+    termAudioFilename,
+    sentenceAudioFilename,
+  } = item;
 
   const { absoluteSentenceAudioPath, absoluteTermAudioPath } =
     resolveAudioPaths(termAudioFilename, sentenceAudioFilename);
@@ -68,10 +74,8 @@ export async function addNote(
     fields: {
       Text: sentence.japanese,
       WordRtkKeywords: FindRtkKeywordsJoinedComma(term, rtkKeywords),
-      "Sentence-Audio": absoluteSentenceAudioPath,
-      ClozeAudio: absoluteTermAudioPath,
       ClozeAnswer: term,
-      ClozeReading: sentence.reading,
+      ClozeReading: termReading,
     },
     audio: [
       {
@@ -101,7 +105,30 @@ export async function addNote(
   return nid;
 }
 
-async function go(term: string, reading: string) {
+async function testAnkiConnect(deckName: string, modelName: string) {
+  const stats = await client.deck.getDeckStats({
+    decks: [deckName],
+  });
+
+  if (Object.values(stats).find((s) => s.name === deckName) == undefined) {
+    throw new Error("Deck not found: " + deckName);
+  }
+
+  const modelNames = await client.model.modelNames();
+
+  if (!modelNames.includes(modelName)) {
+    throw new Error("Model not found: " + modelName);
+  }
+}
+
+async function go(
+  deckName: string,
+  modelname: string,
+  term: string,
+  reading: string
+) {
+  await testAnkiConnect(deckName, modelname);
+
   const rtkKeywords = await GetJouyouRtkKeywords();
 
   if (rtkKeywords.length === 0) {
@@ -137,6 +164,7 @@ async function go(term: string, reading: string) {
         );
         resolve({
           term,
+          termReading: reading,
           sentence,
           termAudioFilename: readingAudioFilename,
           sentenceAudioFilename,
@@ -147,8 +175,8 @@ async function go(term: string, reading: string) {
   const items = await Promise.all(generateAudioPromises);
 
   for (const item of items) {
-    await addNote("Clozes", "ClozeCard", item, rtkKeywords);
+    await addNote(deckName, modelname, item, rtkKeywords);
   }
 }
 
-await go("条件", "じょうけん");
+await go("Clozes", "ClozeCard", "条件", "じょうけん");
