@@ -1,37 +1,27 @@
 import { parse } from "csv";
 import { stringify } from "csv/sync";
-import { DataPaths } from "./IDataItems";
 
-export interface InCsvItem {
-  漢字: string;
-  絵: string;
-  例文: string;
-  ノートID: string;
-  NoteImage: string;
-  Error: string;
-}
-
-export async function loadCsv(): Promise<InCsvItem[]> {
-  const result = parse(await Bun.file(DataPaths.inputCsv).text(), {
+export async function loadCsv<T>(path: string): Promise<T[]> {
+  const result = parse(await Bun.file(path).text(), {
     columns: true,
   });
 
-  const items: InCsvItem[] = [];
+  const items: T[] = [];
 
   for await (const _r of result) {
-    const row: InCsvItem = _r as InCsvItem;
+    const row: T = _r as T;
     items.push(row);
   }
 
   return items;
 }
 
-export async function saveCsv(items: InCsvItem[]) {
+export async function saveCsv<T>(items: T[], path: string) {
   const csv = stringify(items, {
     header: true,
   });
 
-  await Bun.write(DataPaths.inputCsv, csv);
+  await Bun.write(path, csv);
 }
 
 export async function input(prompt: string): Promise<number | null> {

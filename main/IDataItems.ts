@@ -18,5 +18,6 @@ export const DataPaths = {
   dictformIndex: "./data/dictform_index.json",
   jitendexYomitanFolder: "./data/jitendex-yomitan",
   ankiDroneSentencePackApkg: "./data/Ankidrone Sentence Pack V4.apkg",
-  inputCsv: "/home/james/Dropbox/SentenceMine.csv",
+  inputSentenceCsv: "/home/james/Dropbox/SentenceMine.csv",
+  inputClozeCsv: "/home/james/Dropbox/ClozeMine.csv",
 };

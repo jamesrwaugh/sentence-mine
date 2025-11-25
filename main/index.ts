@@ -1,12 +1,22 @@
 import { loadCsv, saveCsv } from "./io";
 import { processAddImage, processAddNewOrUpdateNote } from "./note_actions";
 import { loadDataItems } from "./data_items";
+import { DataPaths } from "./IDataItems";
+
+interface InCsvItem {
+  漢字: string;
+  絵: string;
+  例文: string;
+  ノートID: string;
+  NoteImage: string;
+  Error: string;
+}
 
 async function main() {
   const dataItems = await loadDataItems();
 
   console.log("Loading CSV...");
-  const items = await loadCsv();
+  const items = await loadCsv<InCsvItem>(DataPaths.inputSentenceCsv);
 
   const unadded = items
     .filter((r) => r.Error === "")
@@ -44,7 +54,7 @@ async function main() {
     }
   }
 
-  await saveCsv(items);
+  await saveCsv(items, DataPaths.inputSentenceCsv);
 
   console.log("Done");
 }

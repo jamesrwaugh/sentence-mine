@@ -10,7 +10,7 @@ export interface RtkKeywordLine {
   jpdbCollisions: string;
 }
 
-export async function GetJouyouRtkKeywords() {
+export async function GetJouyouRtkKeywords(): Promise<RtkKeywordLine[]> {
   const csv = parse(await Bun.file(DataPaths.rtkKeywordsCsv).text(), {
     columns: true,
   });

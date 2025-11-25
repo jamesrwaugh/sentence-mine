@@ -153,6 +153,7 @@ export async function addImage(nid: number, kanji: string, image: string) {
         {
           filename: `${kanji}_${image}`,
           data: imageBase64,
+          replace: true,
           fields: ["Picture"],
         },
       ],
