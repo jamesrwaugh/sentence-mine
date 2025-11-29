@@ -19,7 +19,9 @@ export const ResponseSchema = z.object({
     ),
 });
 
+export type SentenceSearchResult = z.infer<typeof ResponseSchema>;
+
 export type SentenceSearchFn = (
   term: string,
   max_sentences: number
-) => Promise<z.infer<typeof ResponseSchema> | null>;
+) => Promise<SentenceSearchResult | null>;

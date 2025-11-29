@@ -1,5 +1,5 @@
-import { parse } from "csv-parse";
 import { DataPaths } from "./IDataItems";
+import { loadCsv } from "./io";
 
 export interface RtkKeywordLine {
   kanji: string;
@@ -11,16 +11,7 @@ export interface RtkKeywordLine {
 }
 
 export async function GetJouyouRtkKeywords(): Promise<RtkKeywordLine[]> {
-  const csv = parse(await Bun.file(DataPaths.rtkKeywordsCsv).text(), {
-    columns: true,
-  });
-
-  const rtkKeywords: RtkKeywordLine[] = [];
-
-  for await (const row of csv) {
-    rtkKeywords.push(row);
-  }
-
+  const rtkKeywords = await loadCsv<RtkKeywordLine>(DataPaths.rtkKeywordsCsv);
   return rtkKeywords.filter((r) => Number(r.heisigId) <= 2200);
 }
 
