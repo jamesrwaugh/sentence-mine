@@ -200,3 +200,19 @@ export async function queryNotes<TFieldType>(
     fields: note.fields as unknown as TFieldType,
   }));
 }
+
+export async function testAnkiConnect(deckName: string, modelName: string) {
+  const stats = await client.deck.getDeckStats({
+    decks: [deckName],
+  });
+
+  if (Object.values(stats).find((s) => s.name === deckName) == undefined) {
+    throw new Error("Deck not found: " + deckName);
+  }
+
+  const modelNames = await client.model.modelNames();
+
+  if (!modelNames.includes(modelName)) {
+    throw new Error("Model not found: " + modelName);
+  }
+}

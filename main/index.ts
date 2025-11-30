@@ -2,6 +2,7 @@ import { loadCsv, saveCsv } from "./io";
 import { processAddImage, processAddNewOrUpdateNote } from "./note_actions";
 import { loadDataItems } from "./data_items";
 import { DataPaths } from "./IDataItems";
+import { testAnkiConnect } from "./ankiconnect";
 
 interface InCsvItem {
   漢字: string;
@@ -13,6 +14,11 @@ interface InCsvItem {
 }
 
 async function main() {
+  const deckName = "Core2.3k Version 3";
+  const modelName = "core2.3k-anime-card";
+
+  await testAnkiConnect(deckName, modelName);
+
   const dataItems = await loadDataItems();
 
   console.log("Loading CSV...");
@@ -26,8 +32,8 @@ async function main() {
     console.log(`New: ${row.漢字} ....`);
 
     const result = await processAddNewOrUpdateNote(
-      "Core2.3k Version 3",
-      "core2.3k-anime-card",
+      deckName,
+      modelName,
       row,
       dataItems
     );
