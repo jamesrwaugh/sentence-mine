@@ -7,8 +7,6 @@ import {
 } from "../main/rtk_keywords";
 import { join, resolve } from "node:path";
 import type { SentenceMediaData } from "./generate_cards";
-import { tokenize } from "@enjoyjs/node-mecab";
-import { console } from "node:inspector";
 import { analyze } from "./sudachi";
 
 export interface AlternativeJson {
