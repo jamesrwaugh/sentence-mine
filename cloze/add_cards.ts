@@ -7,6 +7,9 @@ import {
 } from "../main/rtk_keywords";
 import { join, resolve } from "node:path";
 import type { SentenceMediaData } from "./generate_cards";
+import { tokenize } from "@enjoyjs/node-mecab";
+import { console } from "node:inspector";
+import { analyze } from "./sudachi";
 
 export interface AlternativeJson {
   w: string;
@@ -69,11 +72,16 @@ export async function addClozeNote(
   const { absoluteSentenceAudioPath, absoluteTermAudioPath } =
     resolveAudioPaths(termAudioFilename, sentenceAudioFilename);
 
+  const { sentence: clozedSentence, found } = await getClozeSentence(
+    term,
+    sentence.japanese
+  );
+
   const noteItem: Parameters<typeof client.note.addNote>[0]["note"] = {
     deckName,
     modelName,
     fields: {
-      Text: sentence.japanese,
+      Text: clozedSentence,
       WordRtkKeywords: FindRtkKeywordsJoinedComma(term, rtkKeywords),
       ClozeAnswer: term,
       ClozeReading: termReading,
@@ -94,7 +102,7 @@ export async function addClozeNote(
         fields: ["ClozeAudio"],
       },
     ],
-    tags: ["mined"],
+    tags: ["mined", ...(!found ? ["cnf"] : [])],
     options: {
       duplicateScope: "deck",
       duplicateScopeOptions: {
@@ -112,4 +120,38 @@ export async function addClozeNote(
   }
 
   return nid;
+}
+
+async function getNormalizedFormMaybe(term: string) {
+  const rawTokens = await analyze(term, { all: true });
+  const a = rawTokens.find((t) => t.surface == term);
+  return a?.normalized ?? a?.dictionary ?? term;
+}
+
+export async function getClozeSentence(term: string, sentence: string) {
+  const termNormalized = await getNormalizedFormMaybe(term);
+  const rawTokens = await analyze(sentence, { all: true });
+
+  // console.log(termNormalized, "->", rawTokens);
+
+  const badPos = ["BOS/EOS", "BOS", "EOS"];
+
+  const cleanTokens = rawTokens.filter((t) =>
+    t.surface ? !badPos.includes(t.surface) : true
+  );
+
+  let found = false;
+
+  const clozedSentence = cleanTokens.reduce((acc, curr) => {
+    if (curr.normalized === termNormalized) {
+      found = true;
+      return `${acc}{{c1::${curr.surface}}}`;
+    }
+    return `${acc}${curr.surface}`;
+  }, "");
+
+  return {
+    sentence: clozedSentence,
+    found,
+  };
 }
