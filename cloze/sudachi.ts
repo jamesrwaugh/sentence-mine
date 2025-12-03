@@ -71,7 +71,7 @@ EOS
       dictionary,
       reading,
       dictionaryId,
-      synonymGroupIds: synonymGroupIds ? synonymGroupIds.split(",") : undefined,
+      synonymGroupIds: synonymGroupIds?.split(","),
       oov,
     };
   });
