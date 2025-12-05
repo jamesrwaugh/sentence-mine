@@ -174,7 +174,7 @@ export async function searchFirstNoteId(
 }
 
 export interface MiniNote<TFieldType> {
-  id: number;
+  nid: number;
   fields: TFieldType;
 }
 
@@ -196,7 +196,7 @@ export async function queryNotes<TFieldType>(
   });
 
   return notes.map((note) => ({
-    id: note.noteId,
+    nid: note.noteId,
     fields: note.fields as unknown as TFieldType,
   }));
 }

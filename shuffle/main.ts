@@ -1,4 +1,3 @@
-import { YankiConnect } from "yanki-connect";
 import { loadDataItems } from "../main/data_items";
 import { searchSentences, type DictNote } from "../main/search_sentence";
 import { tryDownloadTermAudio } from "../main/audio";
@@ -6,8 +5,6 @@ import { updateTheNote } from "../main/note_actions";
 import { GetMecabWords } from "../main/mecab";
 import { max } from "underscore";
 import { queryNotes, type AnkiField, type MiniNote } from "../main/ankiconnect";
-
-const client = new YankiConnect();
 
 export interface NoteFields {
   Word: AnkiField;
@@ -143,13 +140,13 @@ async function go() {
     }
 
     console.log(
-      original.id,
+      original.nid,
       original.fields.Sentence.value,
       " ----> ",
       bestOther?.sentence.sentence
     );
 
-    await updateNote(deckName, original.id, bestOther);
+    await updateNote(deckName, original.nid, bestOther);
   }
 }
 

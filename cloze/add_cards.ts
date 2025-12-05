@@ -1,13 +1,19 @@
 import { YankiConnect } from "yanki-connect";
-import type { AnkiField } from "../main/ankiconnect";
+import { queryNotes, type AnkiField } from "../main/ankiconnect";
 import { DataPaths } from "../main/IDataItems";
 import {
   type RtkKeywordLine,
   FindRtkKeywordsJoinedComma,
 } from "../main/rtk_keywords";
 import { join, resolve } from "node:path";
-import type { SentenceMediaData } from "./generate_cards";
+import type {
+  AddErrorMessage,
+  AddResult,
+  SentenceMediaData,
+} from "./generate_cards";
 import { analyze } from "./sudachi";
+import { nameof } from "./nameof";
+import type { InCsvItem } from "./main";
 
 export interface AlternativeJson {
   w: string;
@@ -152,4 +158,48 @@ export async function getClozeSentence(term: string, sentence: string) {
     sentence: clozedSentence,
     found,
   };
+}
+
+export async function updateExistingGroupIdAlternatives(
+  deckName: string,
+  newItem: InCsvItem,
+  newItemReading: string
+): Promise<AlternativeJson[]> {
+  const groupNotes = await queryNotes<ClozeNoteFields>(
+    deckName,
+    `${nameof<ClozeNoteFields>("GroupId")}:${newItem.グループ番号}`
+  );
+
+  if (
+    groupNotes[0] === undefined ||
+    groupNotes[0].fields.AlternativeJson.value.length === 0
+  ) {
+    throw new Error(
+      `No existing notes found for group ${newItem.グループ番号}`
+    );
+  }
+
+  const oldAlts: AlternativeJson[] = JSON.parse(
+    groupNotes[0].fields.AlternativeJson.value
+  );
+
+  const newAlts: AlternativeJson[] = [
+    ...oldAlts,
+    { w: newItem.漢字, r: newItemReading },
+  ];
+
+  const client = new YankiConnect();
+
+  for (const note of groupNotes) {
+    await client.note.updateNote({
+      note: {
+        id: note.nid,
+        fields: {
+          [nameof<ClozeNoteFields>("AlternativeJson")]: JSON.stringify(newAlts),
+        },
+      },
+    });
+  }
+
+  return newAlts;
 }

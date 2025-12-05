@@ -27,14 +27,20 @@ interface ItemIn {
   alternatives: AlternativeJson[];
 }
 
-export type AddErrorMessage = "no-rtk-keywords" | "no-sentences" | "no-audio";
+export type AddErrorMessage =
+  | "no-rtk-keywords"
+  | "no-sentences"
+  | "no-audio"
+  | "data-error";
 
 interface GeneratedA {
   media: SentenceMediaResult;
   inCsvItem: InCsvItem;
 }
 
-async function generateMediaForGroup(group: InCsvGroup): Promise<ItemIn[]> {
+export async function generateMediaForGroup(
+  group: InCsvGroup
+): Promise<ItemIn[]> {
   const genPromises = group.Items.map(
     (i) =>
       new Promise<GeneratedA>(async (resolve) =>
@@ -70,7 +76,7 @@ async function generateMediaForGroup(group: InCsvGroup): Promise<ItemIn[]> {
   }));
 }
 
-async function generateMediaForSingle(
+export async function generateMediaForSingle(
   term: string
 ): Promise<SentenceMediaResult> {
   const sentences = await searchGrok(term, 3);

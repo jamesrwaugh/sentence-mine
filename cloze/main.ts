@@ -3,10 +3,13 @@ import { DataPaths } from "../main/IDataItems";
 import { loadCsv, saveCsv } from "../main/io";
 import {
   generateAndAddCards,
+  generateMediaForSingle,
   type AddErrorMessage,
   type AddResult,
 } from "./generate_cards";
 import { groupBy } from "underscore";
+import { addClozeNote, updateExistingGroupIdAlternatives } from "./add_cards";
+import { GetJouyouRtkKeywords } from "../main/rtk_keywords";
 
 export interface InCsvItem {
   漢字: string;
@@ -51,64 +54,141 @@ async function main() {
   const deckName = "Clozes";
   const modelName = "ClozeCard";
 
-  const unAddedItems = (await loadCsv<InCsvItem>(DataPaths.inputClozeCsv))
-    .filter((item) => item.Error === "")
-    .filter((item) => item.ノートID集合 === "");
+  const allItems = await loadCsv<InCsvItem>(DataPaths.inputClozeCsv);
 
-  const groupedItems = groupBy(unAddedItems, (item) => item.グループ番号);
+  const noErrorItems = allItems.filter((item) => item.Error === "");
+
+  const groupedItems = groupBy(noErrorItems, (item) => item.グループ番号);
 
   const groups = Object.entries(groupedItems).map(([id, item]) => ({
     GroupId: id,
     Items: item,
   }));
 
-  await checkForInputErrors(unAddedItems, groups);
+  await checkForInputErrors(noErrorItems, groups);
 
   await testAnkiConnect(deckName, modelName);
 
-  for (const group of groups) {
-    console.log(
-      `Generating cards for ${group.GroupId} (${group.Items.length} items) ...`
-    );
+  const newGroups = groups.filter(({ Items }) =>
+    Items.every((item) => item.グループ番号 === "")
+  );
 
-    const results = await generateAndAddCards(deckName, modelName, group);
+  const additionItems = groups
+    .filter(
+      ({ Items }) =>
+        Items.some((item) => item.ノートID集合 === "") &&
+        Items.some((item) => item.ノートID集合 !== "")
+    )
+    .flatMap((g) => g.Items)
+    .filter((item) => item.グループ番号 === "");
 
-    const goodResults = Object.entries(results).filter(([_, result]) =>
-      isGoodAddResult(result)
-    );
+  for (const group of newGroups) {
+    const result = await addNewGroup(group, deckName, modelName);
+    updateCsvLinesInPlace(allItems, result);
+  }
 
-    const badResults = Object.entries(results).filter(([_, result]) =>
-      isBadAddResult(result)
-    );
+  for (const item of additionItems) {
+    const result = await addInAdditionItems(item, deckName, modelName);
+    updateCsvLinesInPlace(allItems, { [item.漢字]: result });
+  }
 
-    console.log(
-      `Generated ${goodResults.length} cards: ${goodResults
-        .map((r) => r[0])
-        .join(",")}`
-    );
+  await saveCsv(allItems, DataPaths.inputClozeCsv);
+}
 
-    for (const [word, result] of goodResults) {
-      assertGoodAddResult(result);
-      const nid = result.nid;
-      console.log(`Card generated for word ${word}: ${nid}`);
-      const item = group.Items.find((i) => i.漢字 == word);
-      if (item) {
-        item.ノートID集合 = nid.toString();
-      }
-    }
+function updateCsvLinesInPlace(
+  allItems: InCsvItem[],
+  results: Record<string, AddResult>
+) {
+  const goodResults = Object.entries(results).filter(([_, result]) =>
+    isGoodAddResult(result)
+  );
 
-    for (const [word, result] of badResults) {
-      assertBadAddResult(result);
-      const error = result.error;
-      console.log(`Error for word ${word}: ${error}`);
-      const item = group.Items.find((i) => i.漢字 == word);
-      if (item) {
-        item.Error = error ?? "Unknown error";
-      }
+  const badResults = Object.entries(results).filter(([_, result]) =>
+    isBadAddResult(result)
+  );
+
+  console.log(
+    `Generated ${goodResults.length} cards: ${goodResults
+      .map((r) => r[0])
+      .join(",")}`
+  );
+
+  for (const [word, result] of goodResults) {
+    assertGoodAddResult(result);
+    const nid = result.nid;
+    console.log(`Card generated for word ${word}: ${nid}`);
+    const item = allItems.find((i) => i.漢字 == word);
+    if (item) {
+      item.ノートID集合 = nid.toString();
     }
   }
 
-  await saveCsv(unAddedItems, DataPaths.inputClozeCsv);
+  for (const [word, result] of badResults) {
+    assertBadAddResult(result);
+    const error = result.error;
+    console.log(`Error for word ${word}: ${error}`);
+    const item = allItems.find((i) => i.漢字 == word);
+    if (item) {
+      item.Error = error ?? "Unknown error";
+    }
+  }
+}
+
+async function addInAdditionItems(
+  item: InCsvItem,
+  deckName: string,
+  modelName: string
+): Promise<AddResult> {
+  console.log(
+    `Generating addition cards for ${item.グループ番号}: ${item.漢字}`
+  );
+
+  const media = await generateMediaForSingle(item.漢字);
+
+  if (media.error !== undefined) {
+    return { error: media.error };
+  }
+
+  const newAlts = await updateExistingGroupIdAlternatives(
+    deckName,
+    item,
+    media.sentences[0]?.termReading ?? ""
+  );
+
+  const rtkKeywords = await GetJouyouRtkKeywords();
+
+  let anyNid: number | undefined = undefined;
+
+  for (const result of media.sentences) {
+    anyNid = await addClozeNote(
+      deckName,
+      modelName,
+      {
+        MediaData: result,
+        Alternatives: newAlts,
+        GroupId: item.グループ番号,
+      },
+      rtkKeywords
+    );
+  }
+
+  if (anyNid === undefined) {
+    return { error: "data-error" };
+  }
+
+  return { nid: anyNid };
+}
+
+async function addNewGroup(
+  group: { GroupId: string; Items: InCsvItem[] },
+  deckName: string,
+  modelName: string
+): Promise<Record<string, AddResult>> {
+  console.log(
+    `Generating cards for ${group.GroupId} (${group.Items.length} items) ...`
+  );
+
+  return await generateAndAddCards(deckName, modelName, group);
 }
 
 async function checkForInputErrors(
