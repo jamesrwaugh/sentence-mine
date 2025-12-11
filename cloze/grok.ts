@@ -21,3 +21,9 @@ export const searchGrok: SentenceSearchFn = async (
     return null;
   }
 };
+
+export function confirmXApiSetupOrError() {
+  if (!process.env["XAI_API_KEY"]) {
+    throw new Error("XAI_API_KEY missing");
+  }
+}

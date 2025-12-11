@@ -18,7 +18,7 @@ interface SudachiLine {
 
 export const analyze = async (
   text: string,
-  options: Readonly<SudachiOptions> = {}
+  options: Readonly<SudachiOptions> = { all: true }
 ): Promise<SudachiLine[]> => {
   const { stdout } = await execa("sudachi", dargs(options), { input: text });
   return parseSudachiOutput(stdout);

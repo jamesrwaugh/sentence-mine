@@ -6,11 +6,7 @@ import {
   FindRtkKeywordsJoinedComma,
 } from "../main/rtk_keywords";
 import { join, resolve } from "node:path";
-import type {
-  AddErrorMessage,
-  AddResult,
-  SentenceMediaData,
-} from "./generate_cards";
+import type { SentenceMediaData } from "./generate_cards";
 import { analyze } from "./sudachi";
 import { nameof } from "./nameof";
 import type { InCsvItem } from "./main";
@@ -30,7 +26,7 @@ export interface ClozeNoteFields {
   ClozeAudio: AnkiField;
   ClozeAnswer: AnkiField;
   ClozeReading: AnkiField;
-  AlternativeJson: AnkiField;
+  AlternativesJson: AnkiField;
   GroupId: AnkiField;
 }
 
@@ -172,7 +168,7 @@ export async function updateExistingGroupIdAlternatives(
 
   if (
     groupNotes[0] === undefined ||
-    groupNotes[0].fields.AlternativeJson.value.length === 0
+    groupNotes[0].fields.AlternativesJson.value.length === 0
   ) {
     throw new Error(
       `No existing notes found for group ${newItem.グループ番号}`
@@ -180,8 +176,13 @@ export async function updateExistingGroupIdAlternatives(
   }
 
   const oldAlts: AlternativeJson[] = JSON.parse(
-    groupNotes[0].fields.AlternativeJson.value
+    groupNotes[0].fields.AlternativesJson.value
   );
+
+  // Already in, nothing to do
+  if (oldAlts.find((a) => a.w === newItem.漢字 && a.r === newItemReading)) {
+    return oldAlts;
+  }
 
   const newAlts: AlternativeJson[] = [
     ...oldAlts,
@@ -195,7 +196,8 @@ export async function updateExistingGroupIdAlternatives(
       note: {
         id: note.nid,
         fields: {
-          [nameof<ClozeNoteFields>("AlternativeJson")]: JSON.stringify(newAlts),
+          [nameof<ClozeNoteFields>("AlternativesJson")]:
+            JSON.stringify(newAlts),
         },
       },
     });
