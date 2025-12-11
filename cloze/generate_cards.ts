@@ -7,6 +7,7 @@ import { generateAudioToFile } from "./google";
 import type { InCsvItem, InCsvGroup } from "./main";
 import { uniq } from "underscore";
 import { addClozeNote, type AlternativeJson } from "./add_cards";
+import { shuffle } from "underscore";
 
 export interface SentenceMediaData {
   term: string;
@@ -157,7 +158,7 @@ export async function generateAndAddCards(
   for (const { media, alternatives } of groupResults.filter(
     (p) => p.media.error == undefined
   )) {
-    for (const result of media.sentences) {
+    for (const result of shuffle(media.sentences)) {
       const nid = await addClozeNote(
         deckName,
         modelName,
