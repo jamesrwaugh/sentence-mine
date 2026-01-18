@@ -87,16 +87,30 @@ async function main() {
     .filter((item) => item.ノートID集合 === "");
 
   for (const group of newGroups) {
-    const result = await addNewGroup(group, deckName, modelName);
-    updateCsvLinesInPlace(allItems, group.GroupId, result);
+    try {
+      const result = await addNewGroup(group, deckName, modelName);
+      updateCsvLinesInPlace(allItems, group.GroupId, result);
+    } catch (e) {
+      console.error(
+        "Error adding",
+        group.Items.map((s) => s.漢字),
+        e
+      );
+    }
+    await saveCsv(allItems, DataPaths.inputClozeCsv);
   }
 
   for (const item of additionItems) {
-    const result = await addInAdditionItems(item, deckName, modelName);
-    updateCsvLinesInPlace(allItems, item.グループ番号, { [item.漢字]: result });
+    try {
+      const result = await addInAdditionItems(item, deckName, modelName);
+      updateCsvLinesInPlace(allItems, item.グループ番号, {
+        [item.漢字]: result,
+      });
+    } catch (e) {
+      console.error("Error adding", item.漢字, e);
+    }
+    await saveCsv(allItems, DataPaths.inputClozeCsv);
   }
-
-  await saveCsv(allItems, DataPaths.inputClozeCsv);
 }
 
 function updateCsvLinesInPlace(
