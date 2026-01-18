@@ -158,7 +158,7 @@ export async function generateAndAddCards(
   for (const { media, alternatives } of groupResults.filter(
     (p) => p.media.error == undefined
   )) {
-    for (const result of shuffle(media.sentences)) {
+    for (const result of media.sentences) {
       const nid = await addClozeNote(
         deckName,
         modelName,
