@@ -3,6 +3,7 @@ import { execa } from "execa";
 
 interface SudachiOptions {
   all?: boolean;
+  m?: string;
 }
 
 interface SudachiLine {
@@ -18,7 +19,7 @@ interface SudachiLine {
 
 export const analyze = async (
   text: string,
-  options: Readonly<SudachiOptions> = {}
+  options: Readonly<SudachiOptions> = { all: true, m: "a" }
 ): Promise<SudachiLine[]> => {
   const { stdout } = await execa("sudachi", dargs(options), { input: text });
   return parseSudachiOutput(stdout);
@@ -35,10 +36,10 @@ function parseSudachiOutput(output: string): SudachiLine[] {
     Normalized Form
     Dictionary Form
     Reading Form
-    Dictionary ID 
+    Dictionary ID
     Synonym group IDs
     (OOV) if a word is Out-of-Vocabulary (not in the dictionary)
-  
+
 教師    名詞,普通名詞,一般,*,*,*        教師    教師    キョウシ        0       [21495]
 が      助詞,格助詞,*,*,*,*     が      が      ガ      0       []
 生徒    名詞,普通名詞,一般,*,*,*        生徒    生徒    セイト  0       [14393]

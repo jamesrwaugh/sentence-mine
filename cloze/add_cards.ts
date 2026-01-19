@@ -6,11 +6,7 @@ import {
   FindRtkKeywordsJoinedComma,
 } from "../main/rtk_keywords";
 import { join, resolve } from "node:path";
-import type {
-  AddErrorMessage,
-  AddResult,
-  SentenceMediaData,
-} from "./generate_cards";
+import type { SentenceMediaData } from "./generate_cards";
 import { analyze } from "./sudachi";
 import { nameof } from "./nameof";
 import type { InCsvItem } from "./main";
@@ -30,7 +26,7 @@ export interface ClozeNoteFields {
   ClozeAudio: AnkiField;
   ClozeAnswer: AnkiField;
   ClozeReading: AnkiField;
-  AlternativeJson: AnkiField;
+  AlternativesJson: AnkiField;
   GroupId: AnkiField;
 }
 
@@ -127,18 +123,33 @@ export async function addClozeNote(
 }
 
 async function getNormalizedFormMaybe(term: string) {
-  const rawTokens = await analyze(term, { all: true });
+  const rawTokens = await analyze(term);
   const a = rawTokens.find((t) => t.surface == term);
   return a?.normalized ?? a?.dictionary ?? term;
 }
 
-export async function getClozeSentence(term: string, sentence: string) {
-  const termNormalized = await getNormalizedFormMaybe(term);
-  const rawTokens = await analyze(sentence, { all: true });
+export async function getClozeSentence(
+  term: string,
+  sentence: string
+): Promise<{
+  sentence: string;
+  found: boolean;
+}> {
+  // Easy way out, if the raw term is just in the sentence
+  if (sentence.includes(term)) {
+    return {
+      found: true,
+      sentence: sentence.replace(term, `{{c1::${term}}}`),
+    };
+  }
 
+  // Otherwise, tokenize the sentence and look for
+  // the normalized form in both.
   // console.log(termNormalized, "->", rawTokens);
 
   const badPos = ["BOS/EOS", "BOS", "EOS"];
+  const termNormalized = await getNormalizedFormMaybe(term);
+  const rawTokens = await analyze(sentence);
 
   const cleanTokens = rawTokens.filter((t) =>
     t.surface ? !badPos.includes(t.surface) : true
@@ -146,12 +157,12 @@ export async function getClozeSentence(term: string, sentence: string) {
 
   let found = false;
 
-  const clozedSentence = cleanTokens.reduce((acc, curr) => {
-    if (curr.normalized === termNormalized) {
+  const clozedSentence = cleanTokens.reduce((acc, term) => {
+    if (term.normalized === termNormalized) {
       found = true;
-      return `${acc}{{c1::${curr.surface}}}`;
+      return `${acc}{{c1::${term.surface}}}`;
     }
-    return `${acc}${curr.surface}`;
+    return `${acc}${term.surface}`;
   }, "");
 
   return {
@@ -172,7 +183,7 @@ export async function updateExistingGroupIdAlternatives(
 
   if (
     groupNotes[0] === undefined ||
-    groupNotes[0].fields.AlternativeJson.value.length === 0
+    groupNotes[0].fields.AlternativesJson.value.length === 0
   ) {
     throw new Error(
       `No existing notes found for group ${newItem.グループ番号}`
@@ -180,8 +191,13 @@ export async function updateExistingGroupIdAlternatives(
   }
 
   const oldAlts: AlternativeJson[] = JSON.parse(
-    groupNotes[0].fields.AlternativeJson.value
+    groupNotes[0].fields.AlternativesJson.value
   );
+
+  // Already in, nothing to do
+  if (oldAlts.find((a) => a.w === newItem.漢字 && a.r === newItemReading)) {
+    return oldAlts;
+  }
 
   const newAlts: AlternativeJson[] = [
     ...oldAlts,
@@ -195,7 +211,8 @@ export async function updateExistingGroupIdAlternatives(
       note: {
         id: note.nid,
         fields: {
-          [nameof<ClozeNoteFields>("AlternativeJson")]: JSON.stringify(newAlts),
+          [nameof<ClozeNoteFields>("AlternativesJson")]:
+            JSON.stringify(newAlts),
         },
       },
     });

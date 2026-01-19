@@ -66,7 +66,7 @@ async function loadYomichansFromFile(
         glossary: entry[5],
         sequence: entry[6],
         termTags: entry[7],
-      } as YomichanDictEntry)
+      }) as YomichanDictEntry
   );
   return more;
 }
@@ -104,10 +104,13 @@ export async function loadDictionary(): Promise<Dictionary> {
       glossary: fishForMeaningTopLevel(entry.glossary[0]!),
     }))
     .filter((entry) => entry.glossary.length > 0)
-    .reduce((acc, entry) => {
-      acc[entry.expression] = entry;
-      return acc;
-    }, {} as Record<string, DictionaryEntry>);
+    .reduce(
+      (acc, entry) => {
+        acc[entry.expression] = entry;
+        return acc;
+      },
+      {} as Record<string, DictionaryEntry>
+    );
 
   return b;
 }

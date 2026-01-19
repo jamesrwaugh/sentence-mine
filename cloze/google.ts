@@ -69,3 +69,11 @@ export async function generateAudioToFile(text: string): Promise<string> {
 
   return filename;
 }
+
+export async function confirmGoogleCloudConnectedOrError() {
+  const client = new TextToSpeechClient();
+  const voices = await client.listVoices({ languageCode: "ja-JP" });
+  if (voices[0].voices?.length === 0) {
+    throw new Error("No audio content in response");
+  }
+}

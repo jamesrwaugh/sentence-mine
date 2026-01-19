@@ -7,6 +7,7 @@ import { generateAudioToFile } from "./google";
 import type { InCsvItem, InCsvGroup } from "./main";
 import { uniq } from "underscore";
 import { addClozeNote, type AlternativeJson } from "./add_cards";
+import { shuffle } from "underscore";
 
 export interface SentenceMediaData {
   term: string;

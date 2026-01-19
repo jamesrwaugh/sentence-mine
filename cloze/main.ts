@@ -1,4 +1,4 @@
-import { testAnkiConnect } from "../main/ankiconnect";
+import { testAnkiConnect as testAnkiConnectOrThrow } from "../main/ankiconnect";
 import { DataPaths } from "../main/IDataItems";
 import { loadCsv, saveCsv } from "../main/io";
 import {
@@ -10,6 +10,10 @@ import {
 import { groupBy } from "underscore";
 import { addClozeNote, updateExistingGroupIdAlternatives } from "./add_cards";
 import { GetJouyouRtkKeywords } from "../main/rtk_keywords";
+import { analyze } from "./sudachi";
+import { confirmGoogleCloudConnectedOrError as confirmGoogleCloudConnectedOrThrow } from "./google";
+import { confirmXApiSetupOrError as confirmXApiSetupOrThrow } from "./grok";
+import { tokenizeSync } from "@enjoyjs/node-mecab";
 
 export interface InCsvItem {
   漢字: string;
@@ -67,10 +71,10 @@ async function main() {
 
   await checkForInputErrors(noErrorItems, groups);
 
-  await testAnkiConnect(deckName, modelName);
+  await testExternalConnections(deckName, modelName);
 
   const newGroups = groups.filter(({ Items }) =>
-    Items.every((item) => item.グループ番号 === "")
+    Items.every((item) => item.ノートID集合 === "")
   );
 
   const additionItems = groups
@@ -80,30 +84,45 @@ async function main() {
         Items.some((item) => item.ノートID集合 !== "")
     )
     .flatMap((g) => g.Items)
-    .filter((item) => item.グループ番号 === "");
+    .filter((item) => item.ノートID集合 === "");
 
   for (const group of newGroups) {
-    const result = await addNewGroup(group, deckName, modelName);
-    updateCsvLinesInPlace(allItems, result);
+    try {
+      const result = await addNewGroup(group, deckName, modelName);
+      updateCsvLinesInPlace(allItems, group.GroupId, result);
+    } catch (e) {
+      console.error(
+        "Error adding",
+        group.Items.map((s) => s.漢字),
+        e
+      );
+    }
+    await saveCsv(allItems, DataPaths.inputClozeCsv);
   }
 
   for (const item of additionItems) {
-    const result = await addInAdditionItems(item, deckName, modelName);
-    updateCsvLinesInPlace(allItems, { [item.漢字]: result });
+    try {
+      const result = await addInAdditionItems(item, deckName, modelName);
+      updateCsvLinesInPlace(allItems, item.グループ番号, {
+        [item.漢字]: result,
+      });
+    } catch (e) {
+      console.error("Error adding", item.漢字, e);
+    }
+    await saveCsv(allItems, DataPaths.inputClozeCsv);
   }
-
-  await saveCsv(allItems, DataPaths.inputClozeCsv);
 }
 
 function updateCsvLinesInPlace(
   allItems: InCsvItem[],
-  results: Record<string, AddResult>
+  groupId: string,
+  groupResults: Record<string, AddResult>
 ) {
-  const goodResults = Object.entries(results).filter(([_, result]) =>
+  const goodResults = Object.entries(groupResults).filter(([_, result]) =>
     isGoodAddResult(result)
   );
 
-  const badResults = Object.entries(results).filter(([_, result]) =>
+  const badResults = Object.entries(groupResults).filter(([_, result]) =>
     isBadAddResult(result)
   );
 
@@ -117,7 +136,9 @@ function updateCsvLinesInPlace(
     assertGoodAddResult(result);
     const nid = result.nid;
     console.log(`Card generated for word ${word}: ${nid}`);
-    const item = allItems.find((i) => i.漢字 == word);
+    const item = allItems.find(
+      (i) => i.漢字 == word && i.グループ番号 === groupId
+    );
     if (item) {
       item.ノートID集合 = nid.toString();
     }
@@ -127,7 +148,9 @@ function updateCsvLinesInPlace(
     assertBadAddResult(result);
     const error = result.error;
     console.log(`Error for word ${word}: ${error}`);
-    const item = allItems.find((i) => i.漢字 == word);
+    const item = allItems.find(
+      (i) => i.漢字 == word && i.グループ番号 === groupId
+    );
     if (item) {
       item.Error = error ?? "Unknown error";
     }
@@ -195,15 +218,47 @@ async function checkForInputErrors(
   items: InCsvItem[],
   groupedItems: InCsvGroup[]
 ) {
-  // Check if any two items have the same word, and print the duplicates
-  const duplicates = items.filter(
-    (item, index, self) => self.findIndex((t) => t.漢字 === item.漢字) !== index
-  );
-  if (duplicates.length > 0) {
-    throw new Error(
-      "Duplicate words found: " + duplicates.map((d) => d.漢字).join(", ")
+  for (const group of groupedItems) {
+    // Check if any two items have the same word in the same group, and print the duplicates
+    const duplicates = group.Items.filter(
+      (item, index, self) =>
+        self.findIndex((t) => t.漢字 === item.漢字) !== index
     );
+    if (duplicates.length > 0) {
+      throw new Error(
+        `Duplicate words found in group: ${group.GroupId}: ${duplicates
+          .map((d) => d.漢字)
+          .join(", ")}`
+      );
+    }
   }
+}
+
+async function testExternalConnections(deckName: string, modelName: string) {
+  console.log("Testing external connections...");
+
+  // MeCab
+  const b = tokenizeSync("今日");
+  if (b.length == 0 || b[1]?.feature.reading !== "キョウ") {
+    throw new Error("Failed to run MeCab");
+  }
+
+  // Sudachi
+  const stuff = await analyze("今日");
+  if (stuff.length == 0 || stuff[0]?.reading !== "キョウ") {
+    throw new Error("Failed to run Sudachi");
+  }
+
+  // Google
+  await confirmGoogleCloudConnectedOrThrow();
+
+  // Grok
+  confirmXApiSetupOrThrow();
+
+  // Anki
+  await testAnkiConnectOrThrow(deckName, modelName);
+
+  console.log("OK");
 }
 
 await main();

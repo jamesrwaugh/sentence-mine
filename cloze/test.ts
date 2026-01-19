@@ -39,10 +39,7 @@ async function test3() {
 //   console.log(b);
 // }
 
-const words = await getClozeSentence(
-  "呼び掛ける",
-  "教師が生徒たちに注意を呼びかけた。"
-);
+const words = await getClozeSentence("もうすぐ", "もうすぐ夏休みが始まります");
 
 console.log(words);
 
