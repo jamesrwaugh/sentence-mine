@@ -140,7 +140,11 @@ function updateCsvLinesInPlace(
       (i) => i.漢字 == word && i.グループ番号 === groupId
     );
     if (item) {
-      item.ノートID集合 = nid.toString();
+      const noteIds = goodResults.map((s) => {
+        assertGoodAddResult(s[1]);
+        return s[1].nid;
+      });
+      item.ノートID集合 = JSON.stringify(noteIds);
     }
   }
 
