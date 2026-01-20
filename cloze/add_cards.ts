@@ -135,6 +135,35 @@ export async function getClozeSentence(
   sentence: string;
   found: boolean;
 }> {
+  {
+    // Try fancy way, tokenize the sentence and look for
+    // the normalized form in both.
+    const badPos = ["BOS/EOS", "BOS", "EOS"];
+    const termNormalized = await getNormalizedFormMaybe(term);
+    const rawTokens = await analyze(sentence);
+
+    const cleanTokens = rawTokens.filter((t) =>
+      t.surface ? !badPos.includes(t.surface) : true
+    );
+
+    let found = false;
+
+    const clozedSentence = cleanTokens.reduce((acc, term) => {
+      if (term.normalized === termNormalized) {
+        found = true;
+        return `${acc}{{c1::${term.surface}}}`;
+      }
+      return `${acc}${term.surface}`;
+    }, "");
+
+    if (found) {
+      return {
+        sentence: clozedSentence,
+        found,
+      };
+    }
+  }
+
   // Easy way out, if the raw term is just in the sentence
   if (sentence.includes(term)) {
     return {
@@ -143,31 +172,9 @@ export async function getClozeSentence(
     };
   }
 
-  // Otherwise, tokenize the sentence and look for
-  // the normalized form in both.
-  // console.log(termNormalized, "->", rawTokens);
-
-  const badPos = ["BOS/EOS", "BOS", "EOS"];
-  const termNormalized = await getNormalizedFormMaybe(term);
-  const rawTokens = await analyze(sentence);
-
-  const cleanTokens = rawTokens.filter((t) =>
-    t.surface ? !badPos.includes(t.surface) : true
-  );
-
-  let found = false;
-
-  const clozedSentence = cleanTokens.reduce((acc, term) => {
-    if (term.normalized === termNormalized) {
-      found = true;
-      return `${acc}{{c1::${term.surface}}}`;
-    }
-    return `${acc}${term.surface}`;
-  }, "");
-
   return {
-    sentence: clozedSentence,
-    found,
+    found: false,
+    sentence: sentence,
   };
 }
 
