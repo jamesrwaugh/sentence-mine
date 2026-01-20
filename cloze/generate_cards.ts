@@ -7,7 +7,6 @@ import { generateAudioToFile } from "./google";
 import type { InCsvItem, InCsvGroup } from "./main";
 import { uniq } from "underscore";
 import { addClozeNote, type AlternativeJson } from "./add_cards";
-import { shuffle } from "underscore";
 
 export interface SentenceMediaData {
   term: string;
@@ -44,12 +43,15 @@ export async function generateMediaForGroup(
 ): Promise<ItemIn[]> {
   const genPromises = group.Items.map(
     (i) =>
-      new Promise<GeneratedA>(async (resolve) =>
+      new Promise<GeneratedA>(async (resolve) => {
+        const otherTerms = group.Items.map((item) => item.漢字).filter(
+          (term) => term !== i.漢字
+        );
         resolve({
-          media: await generateMediaForSingle(i.漢字),
+          media: await generateMediaForSingle(i.漢字, otherTerms),
           inCsvItem: i,
-        })
-      )
+        });
+      })
   );
 
   const pss = await Promise.all(genPromises);
@@ -78,9 +80,10 @@ export async function generateMediaForGroup(
 }
 
 export async function generateMediaForSingle(
-  term: string
+  term: string,
+  other_terms: string[]
 ): Promise<SentenceMediaResult> {
-  const sentences = await searchGrok(term, 3);
+  const sentences = await searchGrok(term, other_terms, 3);
 
   if (sentences == null) {
     console.log("No sentences found for ", term);
