@@ -11,7 +11,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@ai-sdk/xai": "^2.0.53",
+    "@ai-sdk/xai": "^2.0.54",
     "@enjoyjs/node-mecab": "^0.5.0",
     "@google-cloud/text-to-speech": "^6.4.0",
     "@types/underscore": "^1.13.0",
