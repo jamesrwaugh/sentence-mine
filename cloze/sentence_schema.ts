@@ -23,5 +23,6 @@ export type SentenceSearchResult = z.infer<typeof ResponseSchema>;
 
 export type SentenceSearchFn = (
   term: string,
+  other_terms: string[],
   max_sentences: number
 ) => Promise<SentenceSearchResult | null>;

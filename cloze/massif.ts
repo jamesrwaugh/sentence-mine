@@ -32,6 +32,7 @@ async function searchMassifApi(query: string): Promise<MassifApiResponse> {
 
 export const searchMassif: SentenceSearchFn = async (
   term: string,
+  other_terms: string[],
   max_sentences: number
 ) => {
   try {
