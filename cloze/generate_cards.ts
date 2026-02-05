@@ -17,7 +17,7 @@ export interface SentenceMediaData {
 }
 
 interface SentenceMediaResult {
-  word: string;
+  term: string;
   sentences: SentenceMediaData[];
   error?: AddErrorMessage;
 }
@@ -83,12 +83,12 @@ export async function generateMediaForSingle(
   term: string,
   other_terms: string[]
 ): Promise<SentenceMediaResult> {
-  const sentences = await searchGrok(term, other_terms, 3);
+  const sentences = await searchGrok(term, other_terms, 2);
 
   if (sentences == null) {
     console.log("No sentences found for ", term);
     return {
-      word: term,
+      term: term,
       sentences: [],
       error: "no-sentences",
     };
@@ -102,7 +102,7 @@ export async function generateMediaForSingle(
   if (readingAudioFilename == undefined) {
     console.log("No reading audio found for ", term, sentences.term_reading);
     return {
-      word: term,
+      term: term,
       sentences: [],
       error: "no-audio",
     };
@@ -115,7 +115,7 @@ export async function generateMediaForSingle(
           sentence.japanese
         );
         resolve({
-          term,
+          term: term,
           termReading: sentences.term_reading,
           sentence,
           termAudioFilename: readingAudioFilename,
@@ -127,7 +127,7 @@ export async function generateMediaForSingle(
   const items = await Promise.all(generateAudioPromises);
 
   return {
-    word: term,
+    term: term,
     sentences: items,
     error: undefined,
   };
@@ -138,7 +138,7 @@ export type AddResult =
       error: AddErrorMessage;
     }
   | {
-      nid: number;
+      nids: number[];
     };
 
 export async function generateAndAddCards(
@@ -155,25 +155,27 @@ export async function generateAndAddCards(
   groupResults
     .filter((p) => p.media.error != undefined)
     .forEach((p) => {
-      results[p.media.word] = { error: p.media.error! };
+      results[p.media.term] = { error: p.media.error! };
     });
 
   for (const { media, alternatives } of groupResults.filter(
     (p) => p.media.error == undefined
   )) {
-    for (const result of media.sentences) {
+    let nids: number[] = [];
+    for (const sentence of media.sentences) {
       const nid = await addClozeNote(
         deckName,
         modelName,
         {
-          MediaData: result,
+          MediaData: sentence,
           Alternatives: alternatives,
           GroupId: group.GroupId,
         },
         rtkKeywords
       );
-      results[result.term] = { nid };
+      nids = [...nids, nid];
     }
+    results[media.term] = { nids: nids };
   }
 
   return results;

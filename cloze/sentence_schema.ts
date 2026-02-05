@@ -15,7 +15,7 @@ export const ResponseSchema = z.object({
   term_english_context: z
     .string()
     .describe(
-      "A short English description of how the term is most used in general"
+      "A short English descrirption of why this term best fits this sentence over the other terms. Compare and contrast the closest other term."
     ),
 });
 

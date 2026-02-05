@@ -28,8 +28,8 @@ export interface InCsvGroup {
   Items: InCsvItem[];
 }
 
-function isGoodAddResult(result: AddResult): result is { nid: number } {
-  return "nid" in result;
+function isGoodAddResult(result: AddResult): result is { nids: number[] } {
+  return "nids" in result;
 }
 
 function isBadAddResult(
@@ -40,7 +40,7 @@ function isBadAddResult(
 
 function assertGoodAddResult(
   result: AddResult
-): asserts result is { nid: number } {
+): asserts result is { nids: number[] } {
   if (!isGoodAddResult(result)) {
     throw new Error(`Expected good result, got bad result: ${result}`);
   }
@@ -102,7 +102,16 @@ async function main() {
 
   for (const item of additionItems) {
     try {
-      const result = await addInAdditionItems(item, deckName, modelName);
+      const others = allItems
+        .filter((x) => x.グループ番号 === item.グループ番号)
+        .filter((x) => x.漢字 !== item.漢字)
+        .map((x) => x.漢字);
+      const result = await addInAdditionItems(
+        item,
+        others,
+        deckName,
+        modelName
+      );
       updateCsvLinesInPlace(allItems, item.グループ番号, {
         [item.漢字]: result,
       });
@@ -134,17 +143,12 @@ function updateCsvLinesInPlace(
 
   for (const [word, result] of goodResults) {
     assertGoodAddResult(result);
-    const nid = result.nid;
-    console.log(`Card generated for word ${word}: ${nid}`);
+    console.log(`Card(s) generated for word ${word}: ${result.nids}`);
     const item = allItems.find(
       (i) => i.漢字 == word && i.グループ番号 === groupId
     );
     if (item) {
-      const noteIds = goodResults.map((s) => {
-        assertGoodAddResult(s[1]);
-        return s[1].nid;
-      });
-      item.ノートID集合 = JSON.stringify(noteIds);
+      item.ノートID集合 = JSON.stringify(result.nids);
     }
   }
 
@@ -163,6 +167,7 @@ function updateCsvLinesInPlace(
 
 async function addInAdditionItems(
   item: InCsvItem,
+  other_items: string[],
   deckName: string,
   modelName: string
 ): Promise<AddResult> {
@@ -170,7 +175,7 @@ async function addInAdditionItems(
     `Generating addition cards for ${item.グループ番号}: ${item.漢字}`
   );
 
-  const media = await generateMediaForSingle(item.漢字);
+  const media = await generateMediaForSingle(item.漢字, other_items);
 
   if (media.error !== undefined) {
     return { error: media.error };
@@ -184,10 +189,10 @@ async function addInAdditionItems(
 
   const rtkKeywords = await GetJouyouRtkKeywords();
 
-  let anyNid: number | undefined = undefined;
+  let nids: number[] = [];
 
   for (const result of media.sentences) {
-    anyNid = await addClozeNote(
+    const nid = await addClozeNote(
       deckName,
       modelName,
       {
@@ -197,13 +202,14 @@ async function addInAdditionItems(
       },
       rtkKeywords
     );
+    nids = [...nids, nid];
   }
 
-  if (anyNid === undefined) {
+  if (nids === undefined) {
     return { error: "data-error" };
   }
 
-  return { nid: anyNid };
+  return { nids: nids };
 }
 
 async function addNewGroup(
@@ -253,14 +259,14 @@ async function testExternalConnections(deckName: string, modelName: string) {
     throw new Error("Failed to run Sudachi");
   }
 
-  // Google
-  await confirmGoogleCloudConnectedOrThrow();
-
   // Grok
   confirmXApiSetupOrThrow();
 
   // Anki
   await testAnkiConnectOrThrow(deckName, modelName);
+
+  // Google
+  await confirmGoogleCloudConnectedOrThrow();
 
   console.log("OK");
 }

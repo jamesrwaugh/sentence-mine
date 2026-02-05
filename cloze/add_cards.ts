@@ -62,8 +62,8 @@ export async function addClozeNote(
   const { MediaData, Alternatives, GroupId } = item;
 
   const {
-    term,
-    termReading,
+    term: term,
+    termReading: termReading,
     sentence,
     termAudioFilename,
     sentenceAudioFilename,
