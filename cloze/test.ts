@@ -1,46 +1,97 @@
-// import { tokenize } from "@enjoyjs/node-mecab";
-// import { GetMecabWords } from "../main/mecab";
-// import { searchGrok } from "./grok";
-// import { getClozeSentenceMecab } from "./add_cards";
-// import sudachi from "@nikkei/napi-sudachi";
-// import { execa } from "execa";
-// import dargs from "dargs";
-// import { loadDataItems } from "../main/data_items";
-// import { loadDictionary } from "../main/dictionary";
+import type { ClozeNoteFields } from "./add_cards";
+import { queryNotes } from "../main/ankiconnect";
+import { generateAudioToFileWParams } from "./google";
+import { readdir } from "node:fs/promises";
+import { YankiConnect } from "yanki-connect";
 
-import { getClozeSentence } from "./add_cards";
-import { analyze } from "./sudachi";
+const feminineVoices = [
+  "ja-JP-Chirp3-HD-Aoede",
+  "ja-JP-Chirp3-HD-Despina",
+  "ja-JP-Chirp3-HD-Zephyr",
+  "ja-JP-Chirp3-HD-Erinome",
+  "ja-JP-Chirp3-HD-Gacrux",
+  "ja-JP-Chirp3-HD-Laomedeia",
+];
 
-// async function test1() {
-//   const result = await searchGrok("頼る", 2);
-//   console.log(JSON.stringify(result, null, 2));
-// }
+const masculineVoices = [
+  "ja-JP-Chirp3-HD-Enceladus",
+  "ja-JP-Chirp3-HD-Alnilam",
+  "ja-JP-Chirp3-HD-Umbriel",
+  "ja-JP-Chirp3-HD-Schedar",
+  "ja-JP-Chirp3-HD-Charon",
+  "ja-JP-Chirp3-HD-Enceladus",
+  "ja-JP-Chirp3-HD-Fenrir",
+];
 
-// async function test2() {
-//   const tokenizer = new sudachi.Tokenizer();
-//   const mode = sudachi.SplitMode.c();
+const allVoices = [...masculineVoices, ...feminineVoices];
 
-//   const testText = "呼び掛ける";
-//   const morphemes = tokenizer.tokenize(testText, mode);
-
-//   console.write(morphemes);
-// }
-
-async function test3() {
-  const stdout = await analyze("教師が生徒たちに注意を呼びかけた。", {
-    all: true,
-  });
-  console.log(stdout);
+function getVoiceName(filename: string): string | null {
+  // [sound:事件_sentence_この事件は警察が捜査中です。_ja-JP-Chirp3-HD-Laomedeia.mp3.mp3]
+  var x = filename.indexOf("ja-JP-");
+  var b = filename.indexOf(".", x);
+  if (x === -1 || b === -1) {
+    return null;
+  }
+  const voiceText = filename.substring(x, b);
+  if (allVoices.includes(voiceText)) {
+    return voiceText;
+  }
+  return null;
 }
 
-// async function test4() {
-//   const data = await loadDictionary();
-//   const b = data["呼び掛ける"];
-//   console.log(b);
-// }
+function getFillerSentence(sentence: string): string {
+  return sentence.replace(/{{.*?}}/, "(ナニナニ)");
+}
 
-const words = await getClozeSentence("もうすぐ", "もうすぐ夏休みが始まります");
+async function generatePreviewAudioToFiles() {
+  const groupNotes = await queryNotes<ClozeNoteFields>("Clozes", ``);
 
-console.log(words);
+  const items = groupNotes
+    .map((x) => ({
+      nid: x.nid,
+      text: getFillerSentence(x.fields.Text.value),
+      voiceName: getVoiceName(x.fields["Sentence-Audio"].value)!,
+    }))
+    .filter((x) => !!x.voiceName);
 
-// await test3();
+  const promises = items.map((x) =>
+    generateAudioToFileWParams(x.text, x.voiceName, `${x.nid}.mp3`)
+  );
+
+  await Promise.all(promises);
+}
+
+async function applyToNotes() {
+  const client = new YankiConnect();
+
+  const files = await readdir(
+    "/home/james/Desktop/Git/sentence-mine/cloze/data/audio-temp"
+  );
+
+  console.log(files);
+
+  for (const file of files) {
+    const nid = parseInt(file.replace(".mp3", ""));
+
+    if (isNaN(nid)) {
+      throw new Error("?");
+    }
+
+    await client.note.updateNote({
+      note: {
+        fields: {},
+        audio: [
+          {
+            filename: `${nid}_sentence_preview.mp3`,
+            path: `/home/james/Desktop/Git/sentence-mine/cloze/data/audio-temp/${file}`,
+            replace: true,
+            fields: ["PreviewAudio"],
+          },
+        ],
+        id: nid,
+      },
+    });
+  }
+}
+
+await applyToNotes();

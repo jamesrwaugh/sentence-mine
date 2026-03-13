@@ -28,6 +28,7 @@ export interface ClozeNoteFields {
   ClozeReading: AnkiField;
   AlternativesJson: AnkiField;
   GroupId: AnkiField;
+  PreviewAudio: AnkiField;
 }
 
 function resolveAudioPaths(

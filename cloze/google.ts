@@ -23,27 +23,35 @@ const masculineVoices = [
   "ja-JP-Chirp3-HD-Fenrir",
 ];
 
-function getVoice(sentence: string) {
+function getVoice(sentence: string): string {
   if (masculineJapaneseWords.includes(sentence)) {
-    return masculineVoices[Math.floor(Math.random() * masculineVoices.length)];
+    return masculineVoices[Math.floor(Math.random() * masculineVoices.length)]!;
   } else if (Math.random() < 0.5) {
-    return feminineVoices[Math.floor(Math.random() * feminineVoices.length)];
+    return feminineVoices[Math.floor(Math.random() * feminineVoices.length)]!;
   } else {
-    return masculineVoices[Math.floor(Math.random() * masculineVoices.length)];
+    return masculineVoices[Math.floor(Math.random() * masculineVoices.length)]!;
   }
 }
 
 export async function generateAudioToFile(text: string): Promise<string> {
-  const client = new TextToSpeechClient();
+  const voiceName = getVoice(text);
+  const filename = `${text}_${voiceName}.mp3`;
+  return generateAudioToFileWParams(text, voiceName, filename);
+}
 
-  const voice = getVoice(text);
+export async function generateAudioToFileWParams(
+  text: string,
+  voiceName: string,
+  filename: string
+): Promise<string> {
+  const client = new TextToSpeechClient();
 
   const request: protos.google.cloud.texttospeech.v1.ISynthesizeSpeechRequest =
     {
       input: { text: text },
       voice: {
         languageCode: "ja-JP",
-        name: voice,
+        name: voiceName,
       },
       audioConfig: {
         audioEncoding: "LINEAR16",
@@ -59,8 +67,6 @@ export async function generateAudioToFile(text: string): Promise<string> {
   if (!response.audioContent) {
     throw new Error("No audio content in response");
   }
-
-  const filename = `${text}_${voice}.mp3`;
 
   await Bun.write(
     join(DataPaths.audioTempFolder, filename),
