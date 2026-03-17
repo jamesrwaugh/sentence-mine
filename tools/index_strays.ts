@@ -1,6 +1,6 @@
 import { YankiConnect } from "yanki-connect";
 import { tokenize } from "@enjoyjs/node-mecab";
-import { GetMecabWords } from "../main/mecab";
+import { GetMecabWords } from "common/mecab";
 
 export interface Welcome {
   noteId: number;

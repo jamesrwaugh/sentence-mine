@@ -1,5 +1,5 @@
 import { DataPaths } from "./IDataItems";
-import { loadCsv } from "./io";
+import { loadCsv } from "./csv_io";
 
 export interface RtkKeywordLine {
   kanji: string;

@@ -1,19 +1,47 @@
 import { YankiConnect } from "yanki-connect";
-import type { DictNote } from "./search_sentence";
 import type { DictionaryEntry } from "./dictionary";
-import {
-  FindRtkKeywordsJoinedComma,
-  type RtkKeywordLine,
-} from "./rtk_keywords";
 import { DataPaths } from "./IDataItems";
+import { GetMecabWords } from "./mecab";
+import {
+  type RtkKeywordLine,
+  FindRtkKeywordsJoinedComma,
+} from "./rtk_keywords";
 import { join, resolve } from "node:path";
+import type { DictNote } from "./search_sentence";
+
+export interface SentencesNoteFields {
+  Word: AnkiField;
+  Reading: AnkiField;
+  Glossary: AnkiField;
+  Sentence: AnkiField;
+  "Sentence-English": AnkiField;
+  Picture: AnkiField;
+  Audio: AnkiField;
+  "Sentence-Audio": AnkiField;
+  Hint: AnkiField;
+  WordRtkKeywords: AnkiField;
+}
+
+export async function getWordsInMatureCards(
+  deckName: string
+): Promise<Set<string>> {
+  const notes = await queryNotes<SentencesNoteFields>(
+    deckName,
+    "-is:suspended prop:ivl>21"
+  );
+
+  const wordsInSentencesPs = notes
+    .map((note) => note.fields.Sentence.value)
+    .map((sentence) => GetMecabWords(sentence));
+
+  const wordsInSentences = (await Promise.all(wordsInSentencesPs)).flat();
+
+  const uniqueWords = new Set(wordsInSentences);
+
+  return uniqueWords;
+}
 
 const client = new YankiConnect();
-
-export interface NoteWithAudio {
-  note: DictNote;
-  audioFilename: string;
-}
 
 function makeGlossary(glossary: DictionaryEntry["glossary"]): string {
   const glossaryMap: Record<string, string[]> = {};
@@ -32,7 +60,10 @@ function resolveAudioPaths(
   audioFilename: string,
   sentenceAudioFilename: string
 ) {
-  const sentenceAudioPath = join(DataPaths.deckFolder, sentenceAudioFilename);
+  const sentenceAudioPath = join(
+    DataPaths.ankidroneDeckFolder,
+    sentenceAudioFilename
+  );
 
   const audioPath = join(DataPaths.audioTempFolder, audioFilename);
 
@@ -40,6 +71,11 @@ function resolveAudioPaths(
     absoluteSentenceAudioPath: resolve(process.cwd(), sentenceAudioPath),
     absoluteAuthPath: resolve(process.cwd(), audioPath),
   };
+}
+
+export interface NoteWithAudio {
+  note: DictNote;
+  audioFilename: string;
 }
 
 export async function addNote(

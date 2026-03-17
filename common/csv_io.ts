@@ -1,6 +1,15 @@
 import { parse } from "csv";
 import { stringify } from "csv/sync";
 
+export interface InCsvSentenceItem {
+  漢字: string;
+  絵: string;
+  例文: string;
+  ノートID: string;
+  NoteImage: string;
+  Error: string;
+}
+
 export async function loadCsv<T>(path: string): Promise<T[]> {
   const result = parse(await Bun.file(path).text(), {
     columns: true,

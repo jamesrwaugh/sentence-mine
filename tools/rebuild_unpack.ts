@@ -1,9 +1,9 @@
 import { Unpack } from "anki-apkg-parser";
-import { DataPaths } from "../main/IDataItems";
+import { DataPaths } from "common/IDataItems";
 
 async function unpackDeck() {
   const deckPath = DataPaths.ankiDroneSentencePackApkg;
-  const UNPACK_PATH = DataPaths.deckFolder;
+  const UNPACK_PATH = DataPaths.ankidroneDeckFolder;
 
   try {
     const unpack = new Unpack();

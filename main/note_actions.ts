@@ -3,12 +3,12 @@ import {
   addImage,
   searchFirstNoteId,
   updateNote,
-} from "./ankiconnect";
-import { tryDownloadTermAudio } from "./audio";
-import type { IDataItems } from "./IDataItems";
-import { type InCsvItem, input } from "./io";
-import type { RtkKeywordLine } from "./rtk_keywords";
-import { type DictNote, searchSentences } from "./search_sentence";
+} from "common/ankiconnect";
+import { tryDownloadTermAudio } from "../common/term_audio";
+import type { IDataItems } from "common/IDataItems";
+import { type InCsvSentenceItem, input } from "common/csv_io";
+import type { RtkKeywordLine } from "common/rtk_keywords";
+import { type DictNote, searchSentences } from "common/search_sentence";
 
 type AddResult =
   | {
@@ -96,7 +96,7 @@ export async function updateTheNote(
 export async function processAddNewOrUpdateNote(
   deckName: string,
   modelName: string,
-  row: InCsvItem,
+  row: InCsvSentenceItem,
   dataItems: IDataItems
 ): Promise<AddResult> {
   const { 漢字 } = row;
@@ -163,7 +163,9 @@ export async function processAddNewOrUpdateNote(
   }
 }
 
-export async function processAddImage(row: InCsvItem): Promise<boolean> {
+export async function processAddImage(
+  row: InCsvSentenceItem
+): Promise<boolean> {
   try {
     const nid = parseInt(row.ノートID);
     if (isNaN(nid)) {
@@ -178,6 +180,6 @@ export async function processAddImage(row: InCsvItem): Promise<boolean> {
   }
 }
 
-export function getNoteId(row: InCsvItem): number {
+export function getNoteId(row: InCsvSentenceItem): number {
   return parseInt(row.ノートID);
 }

@@ -1,6 +1,6 @@
 import { testAnkiConnect as testAnkiConnectOrThrow } from "../main/ankiconnect";
-import { DataPaths } from "../main/IDataItems";
-import { loadCsv, saveCsv } from "../main/io";
+import { DataPaths } from "common/IDataItems";
+import { loadCsv, saveCsv } from "common/csv_io";
 import {
   generateAndAddCards,
   generateMediaForSingle,
@@ -9,8 +9,8 @@ import {
 } from "./generate_cards";
 import { groupBy } from "underscore";
 import { addClozeNote, updateExistingGroupIdAlternatives } from "./add_cards";
-import { GetJouyouRtkKeywords } from "../main/rtk_keywords";
-import { analyze } from "./sudachi";
+import { GetJouyouRtkKeywords } from "common/rtk_keywords";
+import { analyze } from "common/sudachi";
 import { confirmGoogleCloudConnectedOrError as confirmGoogleCloudConnectedOrThrow } from "./google";
 import { confirmXApiSetupOrError as confirmXApiSetupOrThrow } from "./grok";
 import { tokenizeSync } from "@enjoyjs/node-mecab";

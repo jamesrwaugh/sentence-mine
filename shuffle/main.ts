@@ -1,45 +1,23 @@
-import { loadDataItems } from "../main/data_items";
-import { searchSentences, type DictNote } from "../main/search_sentence";
-import { tryDownloadTermAudio } from "../main/audio";
+import { loadDataItems } from "common/data_items";
+import { searchSentences, type DictNote } from "common/search_sentence";
+import { tryDownloadTermAudio } from "common/term_audio";
 import { updateTheNote } from "../main/note_actions";
-import { GetMecabWords } from "../main/mecab";
+import { GetMecabWords } from "common/mecab";
 import { max } from "underscore";
-import { queryNotes, type AnkiField, type MiniNote } from "../main/ankiconnect";
-
-export interface NoteFields {
-  Word: AnkiField;
-  Reading: AnkiField;
-  Glossary: AnkiField;
-  Sentence: AnkiField;
-  "Sentence-English": AnkiField;
-  Picture: AnkiField;
-  Audio: AnkiField;
-  "Sentence-Audio": AnkiField;
-  Hint: AnkiField;
-  WordRtkKeywords: AnkiField;
-}
-
-async function getWordsInMatureCards(deckName: string): Promise<Set<string>> {
-  const notes = await queryNotes<NoteFields>(
-    deckName,
-    "-is:suspended prop:ivl>21"
-  );
-
-  const wordsInSentencesPs = notes
-    .map((note) => note.fields.Sentence.value)
-    .map((sentence) => GetMecabWords(sentence));
-
-  const wordsInSentences = (await Promise.all(wordsInSentencesPs)).flat();
-
-  const uniqueWords = new Set(wordsInSentences);
-
-  return uniqueWords;
-}
+import {
+  getWordsInMatureCards,
+  queryNotes,
+  type MiniNote,
+  type SentencesNoteFields,
+} from "common/ankiconnect";
 
 async function getNotesToUpdate(
   deckName: string
-): Promise<MiniNote<NoteFields>[]> {
-  const notes = await queryNotes<NoteFields>(deckName, "-is:suspended");
+): Promise<MiniNote<SentencesNoteFields>[]> {
+  const notes = await queryNotes<SentencesNoteFields>(
+    deckName,
+    "-is:suspended"
+  );
 
   const notesWithoutPictures = notes.filter(
     (note) => note.fields["Picture"]?.value === ""

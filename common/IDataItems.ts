@@ -11,7 +11,7 @@ export interface IDataItems {
 }
 
 export const DataPaths = {
-  deckFolder: "./data/deck-folder",
+  ankidroneDeckFolder: "./data/ankidrone-deck-folder",
   imageTempFolder: "./data/image-temp",
   audioTempFolder: "./data/audio-temp",
   rtkKeywordsCsv: "./data/kanji-keywords-6th-edition.csv",

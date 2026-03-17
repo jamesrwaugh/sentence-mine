@@ -93,7 +93,7 @@ export interface SentenceDeck {
 }
 
 export async function loadSentenceDeck(): Promise<SentenceDeck> {
-  const deck = new Deck(DataPaths.deckFolder);
+  const deck = new Deck(DataPaths.ankidroneDeckFolder);
 
   await deck.dbOpen();
 

@@ -1,6 +1,6 @@
 import { searchGrok } from "./grok";
-import { tryDownloadTermAudio } from "../main/audio";
-import { GetJouyouRtkKeywords } from "../main/rtk_keywords";
+import { tryDownloadTermAudio } from "../common/term_audio";
+import { GetJouyouRtkKeywords } from "common/rtk_keywords";
 import type { SentenceSchema } from "./sentence_schema";
 import { z } from "zod";
 import { generateAudioToFile } from "./google";

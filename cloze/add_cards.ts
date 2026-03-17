@@ -1,15 +1,15 @@
 import { YankiConnect } from "yanki-connect";
-import { queryNotes, type AnkiField } from "../main/ankiconnect";
-import { DataPaths } from "../main/IDataItems";
+import { DataPaths } from "common/IDataItems";
 import {
   type RtkKeywordLine,
   FindRtkKeywordsJoinedComma,
-} from "../main/rtk_keywords";
+} from "common/rtk_keywords";
 import { join, resolve } from "node:path";
 import type { SentenceMediaData } from "./generate_cards";
-import { analyze } from "./sudachi";
-import { nameof } from "./nameof";
+import { analyze } from "common/sudachi";
+import { nameof } from "common/nameof";
 import type { InCsvItem } from "./main";
+import { type AnkiField, queryNotes } from "common/ankiconnect";
 
 export interface AlternativeJson {
   w: string;

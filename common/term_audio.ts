@@ -1,4 +1,4 @@
-import { DataPaths } from "./IDataItems";
+import { DataPaths } from "common/IDataItems";
 import { join } from "node:path";
 
 const HIRAGANA_RANGE: [number, number] = [0x3040, 0x309f];

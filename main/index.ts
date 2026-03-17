@@ -1,17 +1,8 @@
-import { loadCsv, saveCsv } from "./io";
+import { loadCsv, saveCsv, type InCsvSentenceItem } from "common/csv_io";
 import { processAddImage, processAddNewOrUpdateNote } from "./note_actions";
-import { loadDataItems } from "./data_items";
-import { DataPaths } from "./IDataItems";
-import { testAnkiConnect } from "./ankiconnect";
-
-interface InCsvItem {
-  漢字: string;
-  絵: string;
-  例文: string;
-  ノートID: string;
-  NoteImage: string;
-  Error: string;
-}
+import { loadDataItems } from "common/data_items";
+import { DataPaths } from "common/IDataItems";
+import { testAnkiConnect } from "common/ankiconnect";
 
 async function main() {
   const deckName = "Core2.3k Version 3";
@@ -22,7 +13,7 @@ async function main() {
   const dataItems = await loadDataItems();
 
   console.log("Loading CSV...");
-  const items = await loadCsv<InCsvItem>(DataPaths.inputSentenceCsv);
+  const items = await loadCsv<InCsvSentenceItem>(DataPaths.inputSentenceCsv);
 
   const unadded = items
     .filter((r) => r.Error === "")

@@ -1,5 +1,5 @@
 import { YankiConnect } from "yanki-connect";
-import { FindRtkKeywords, type RtkKeywordLine } from "../main/rtk_keywords";
+import { FindRtkKeywords, type RtkKeywordLine } from "common/rtk_keywords";
 
 async function FillRtkKeywords(rtkKeywordsAll: RtkKeywordLine[]) {
   const yankiConnect = new YankiConnect();

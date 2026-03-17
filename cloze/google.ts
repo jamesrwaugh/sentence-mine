@@ -1,6 +1,6 @@
 import { protos, TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { join } from "node:path";
-import { DataPaths } from "../main/IDataItems";
+import { DataPaths } from "common/IDataItems";
 
 const masculineJapaneseWords = ["俺", "僕", "だろう"];
 

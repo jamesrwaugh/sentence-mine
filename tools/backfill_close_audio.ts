@@ -1,6 +1,6 @@
-import type { ClozeNoteFields } from "./add_cards";
-import { queryNotes } from "../main/ankiconnect";
-import { generateAudioToFileWParams } from "./google";
+import { queryNotes } from "common/ankiconnect";
+import type { ClozeNoteFields } from "../cloze/add_cards";
+import { generateAudioToFileWParams } from "../cloze/google";
 import { readdir } from "node:fs/promises";
 import { YankiConnect } from "yanki-connect";
 
