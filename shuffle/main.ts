@@ -10,6 +10,7 @@ import {
   type MiniNote,
   type SentencesNoteFields,
 } from "common/ankiconnect";
+import { Constants } from "common/constants";
 
 async function getNotesToUpdate(
   deckName: string
@@ -92,7 +93,7 @@ async function chooseNextBestNote(
 }
 
 async function go() {
-  const deckName = "Core2.3k Version 3";
+  const deckName = Constants.SentenceDeckName;
 
   const notesToUpdate = await getNotesToUpdate(deckName);
   const dataItems = await loadDataItems();

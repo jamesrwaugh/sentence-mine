@@ -1,6 +1,7 @@
 import { YankiConnect } from "yanki-connect";
 import { tokenize } from "@enjoyjs/node-mecab";
 import { GetMecabWords } from "common/mecab";
+import { Constants } from "common/constants";
 
 export interface Welcome {
   noteId: number;
@@ -33,7 +34,7 @@ const client = new YankiConnect();
 
 async function DumpNotes() {
   const notes = await client.note.findNotes({
-    query: 'deck:"Core2.3k Version 3"',
+    query: `deck:"${Constants.SentenceDeckName}"`,
   });
   console.log("Found", notes.length);
   const fields = await client.note.notesInfo({ notes: notes });

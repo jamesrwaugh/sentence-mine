@@ -3,10 +3,11 @@ import { processAddImage, processAddNewOrUpdateNote } from "./note_actions";
 import { loadDataItems } from "common/data_items";
 import { DataPaths } from "common/IDataItems";
 import { testAnkiConnect } from "common/ankiconnect";
+import { Constants } from "common/constants";
 
 async function main() {
-  const deckName = "Core2.3k Version 3";
-  const modelName = "core2.3k-anime-card";
+  const deckName = Constants.SentenceDeckName;
+  const modelName = Constants.SentenceDeckModelName;
 
   await testAnkiConnect(deckName, modelName);
 

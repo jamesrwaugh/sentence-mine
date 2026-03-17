@@ -6,7 +6,7 @@ interface SudachiOptions {
   m?: string;
 }
 
-interface SudachiLine {
+export interface SudachiLine {
   surface: string | undefined;
   pos: string | undefined;
   normalized: string | undefined;
@@ -53,7 +53,8 @@ function parseSudachiOutput(output: string): SudachiLine[] {
 EOS
   */
 
-  const lines = output.split("\n");
+  const lines = output.split("\n").filter((line) => line.trim() !== "EOS");
+
   const words: SudachiLine[] = lines.map((line) => {
     const [
       surface,

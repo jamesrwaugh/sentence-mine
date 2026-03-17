@@ -1,11 +1,12 @@
 import { YankiConnect } from "yanki-connect";
 import { FindRtkKeywords, type RtkKeywordLine } from "common/rtk_keywords";
+import { Constants } from "common/constants";
 
 async function FillRtkKeywords(rtkKeywordsAll: RtkKeywordLine[]) {
   const yankiConnect = new YankiConnect();
 
   const noteIds = await yankiConnect.note.findNotes({
-    query: 'deck:"Core2.3k Version 3"',
+    query: `deck:"${Constants.SentenceDeckName}"`,
   });
 
   const notesInfo = await yankiConnect.note.notesInfo({ notes: noteIds });
