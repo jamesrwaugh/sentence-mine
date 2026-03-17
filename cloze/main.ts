@@ -1,4 +1,4 @@
-import { testAnkiConnect as testAnkiConnectOrThrow } from "../main/ankiconnect";
+import { testAnkiConnect as testAnkiConnectOrThrow } from "common/ankiconnect";
 import { DataPaths } from "common/IDataItems";
 import { loadCsv, saveCsv } from "common/csv_io";
 import {
