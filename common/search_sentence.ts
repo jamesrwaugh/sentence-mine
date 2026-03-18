@@ -7,6 +7,7 @@ import {
   type IDataItemsSentencesOnly,
 } from "./IDataItems";
 import { parseAnkiSoundField } from "./audio";
+import { analyzeSync } from "./sudachi";
 
 // To rebuild the model fields, run the following code:
 // for (const model of Object.values(models)) {
@@ -116,10 +117,32 @@ export async function loadSentenceDeck(): Promise<SentenceDeck> {
   };
 }
 
+function findNormalizedForm(searchTerm: string): string | null {
+  const item = analyzeSync(searchTerm, { all: true, m: "c" });
+
+  if (item.length === 1) {
+    return item[0]?.normalized ?? null;
+  }
+
+  const goodPoses = ["形容詞", "動詞", "名詞", "形状詞"];
+
+  const usefulCount = item.filter(
+    (x) => x.pos?.pos && goodPoses.includes(x.pos.pos)
+  );
+
+  if (usefulCount.length === 1) {
+    return usefulCount[0]?.normalized ?? null;
+  }
+
+  console.log("Unable to normalize", searchTerm);
+
+  return null;
+}
+
 export function searchSentencesOnly(
   searchTerm: string,
   dataItems: IDataItemsSentencesOnly
-): Sentence[] {
+): { sentences: Sentence[]; normalized: string } | null {
   const { deck, dictFormIndex } = dataItems;
 
   const { notes, media, noteFields } = deck;
@@ -128,28 +151,29 @@ export function searchSentencesOnly(
     throw new Error("No notes found");
   }
 
-  const searchTermT = searchTerm.trim();
+  const itemNormalized = findNormalizedForm(searchTerm);
 
-  let matchedItems: string[][] = [];
-  const dictFormIndicies = dictFormIndex[searchTermT];
-
-  if (dictFormIndicies) {
-    matchedItems = dictFormIndicies.map(
-      (sentenceIndex) => noteFields[sentenceIndex]!
-    );
-  } else {
-    matchedItems = noteFields.filter((note) =>
-      note[ModelFields.SentKanji]?.includes(searchTermT)
-    );
+  if (!itemNormalized) {
+    return null;
   }
+
+  const dictFormIndicies = dictFormIndex[itemNormalized.trim()];
+
+  const matchedItems =
+    dictFormIndicies?.map((sentenceIndex) => noteFields[sentenceIndex]!) ?? [];
 
   if (matchedItems.length === 0) {
-    return [];
+    return null;
   }
 
-  return matchedItems
+  const sentences = matchedItems
     .map((item) => makeSentence(searchTerm, item, media))
     .filter((sentence) => sentence !== null);
+
+  return {
+    sentences: sentences,
+    normalized: itemNormalized,
+  };
 }
 
 export function searchSentences(
@@ -158,12 +182,18 @@ export function searchSentences(
 ): DictNote[] {
   const { dictionary } = dataItems;
 
-  const sentences = searchSentencesOnly(searchTerm, dataItems);
+  const search = searchSentencesOnly(searchTerm, dataItems);
+
+  if (!search) {
+    return [];
+  }
+
+  const { sentences, normalized } = search;
 
   const sentencesWDictInfo = sentences
     .map((sentence) => ({
       sentence,
-      dictionary: dictionary[sentence.searchTerm.trim()]!,
+      dictionary: normalized ? dictionary[normalized?.trim()]! : undefined!,
     }))
     .filter((note) => note.dictionary !== undefined);
 

@@ -1,5 +1,5 @@
 import dargs from "dargs";
-import { execa } from "execa";
+import { execa, execaSync } from "execa";
 
 interface SudachiOptions {
   all?: boolean;
@@ -26,6 +26,14 @@ export const analyze = async (
   options: Readonly<SudachiOptions> = { all: true, m: "a" }
 ): Promise<SudachiLine[]> => {
   const { stdout } = await execa("sudachi", dargs(options), { input: text });
+  return parseSudachiOutput(stdout);
+};
+
+export const analyzeSync = (
+  text: string,
+  options: Readonly<SudachiOptions> = { all: true, m: "a" }
+): SudachiLine[] => {
+  const { stdout } = execaSync("sudachi", dargs(options), { input: text });
   return parseSudachiOutput(stdout);
 };
 

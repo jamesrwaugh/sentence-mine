@@ -1,7 +1,6 @@
 import { YankiConnect } from "yanki-connect";
 import type { DictionaryEntry } from "./dictionary";
 import { DataPaths } from "./IDataItems";
-import { GetSudachiWords } from "./sudachi";
 import {
   type RtkKeywordLine,
   FindRtkKeywordsJoinedComma,
@@ -26,20 +25,24 @@ export interface SentencesNoteFields {
 export async function getWordsInMatureCards(
   deckName: string
 ): Promise<Set<string>> {
-  const notes = await queryNotes<SentencesNoteFields>(
-    deckName,
-    "-is:suspended prop:ivl>21"
-  );
+  // const notes = await queryNotes<SentencesNoteFields>(
+  //   deckName,
+  //   "-is:suspended prop:ivl>21"
+  // );
 
-  const wordsInSentencesPs = notes
-    .map((note) => note.fields.Sentence.value)
-    .map((sentence) => GetSudachiWords(sentence));
+  // const batches = chunk(notes, 100);
 
-  const wordsInSentences = (await Promise.all(wordsInSentencesPs)).flat();
+  // const wordsInSentencesPs = notes
+  //   .map((note) => note.fields.Sentence.value)
+  //   .map((sentence) => GetSudachiWords(sentence));
 
-  const uniqueWords = new Set(wordsInSentences);
+  // const wordsInSentences = (await Promise.all(wordsInSentencesPs)).flat();
 
-  return uniqueWords;
+  // const uniqueWords = new Set(wordsInSentences);
+
+  // return uniqueWords;
+
+  throw new Error("Function is dangerous and must be fixed");
 }
 
 const client = new YankiConnect();

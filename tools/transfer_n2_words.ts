@@ -9,12 +9,7 @@ import {
 import { Constants } from "common/constants";
 import { loadDataItems, loadDataItemsSentenceOnly } from "common/data_items";
 import { searchSentences, searchSentencesOnly } from "common/search_sentence";
-import {
-  analyze,
-  GetSudachiWords,
-  GetSudachiWordsPlusArg,
-  type SudachiLine,
-} from "common/sudachi";
+import { analyze, GetSudachiWords, type SudachiLine } from "common/sudachi";
 import { tryDownloadTermAudio } from "common/term_audio";
 import { chunk, uniq } from "underscore";
 import { chooseNextBestNote } from "common/choose_best_note";

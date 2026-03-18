@@ -16,17 +16,13 @@ async function getNotesToUpdate(
 ): Promise<MiniNote<SentencesNoteFields>[]> {
   const notes = await queryNotes<SentencesNoteFields>(
     deckName,
-    "-is:suspended"
+    "flag:3" // Blue flag
   );
 
-  const notesWithoutPictures = notes.filter(
-    (note) => note.fields["Picture"]?.value === ""
-  );
-
-  return notesWithoutPictures;
+  return notes;
 }
 
-async function updateNote(deckName: string, nid: number, note: DictNote) {
+async function updateNote(nid: number, note: DictNote) {
   const readingAudioFilename = await tryDownloadTermAudio(
     note.dictionary.expression,
     note.dictionary.reading
@@ -47,7 +43,7 @@ async function go() {
   const dataItems = await loadDataItems();
   const words = await getWordsInMatureCards(deckName);
 
-  for (const original of notesToUpdate.slice(0, 10)) {
+  for (const original of notesToUpdate) {
     const otherSentences = searchSentences(
       original.fields.Word.value,
       dataItems
@@ -73,7 +69,7 @@ async function go() {
       bestOther?.sentence.sentence
     );
 
-    await updateNote(deckName, original.nid, bestOther);
+    await updateNote(original.nid, bestOther);
   }
 }
 

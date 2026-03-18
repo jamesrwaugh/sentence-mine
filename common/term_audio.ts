@@ -139,7 +139,7 @@ async function _getInfoJpod101Alt(term: string): Promise<DownloadResult> {
   };
 }
 
-const methods = [_getInfoJpod101, _getInfoJpod101Alt];
+const methods = [_getInfoJpod101Alt, _getInfoJpod101];
 
 export async function tryDownloadTermAudio(
   term: string,
