@@ -219,7 +219,11 @@ export async function searchFirstNoteId(
   return notes[0];
 }
 
-export interface MiniNote<TFieldType> {
+type AllAnkiFields<T> = {
+  [P in keyof T]: AnkiField;
+};
+
+export interface MiniNote<TFieldType extends AllAnkiFields<TFieldType>> {
   nid: number;
   fields: TFieldType;
 }
@@ -229,7 +233,7 @@ export type AnkiField = {
   value: string;
 };
 
-export async function queryNotes<TFieldType>(
+export async function queryNotes<TFieldType extends AllAnkiFields<TFieldType>>(
   deckName: string,
   query: string
 ): Promise<MiniNote<TFieldType>[]> {
