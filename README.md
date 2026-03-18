@@ -2,7 +2,6 @@
 
 ## Install and Get Data
 
-- Install MeCab
 - Install Sudachi-rs
 - Download and extract jitendex-yomitan
 - Download Ankidrone Sentence Pack from https://tatsumoto.neocities.org/blog/ankidrone-sentence-pack

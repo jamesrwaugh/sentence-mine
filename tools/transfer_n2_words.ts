@@ -7,9 +7,10 @@ import {
 } from "common/ankiconnect";
 import { Constants } from "common/constants";
 import { loadDataItems } from "common/data_items";
-import { GetMecabWords } from "common/mecab";
+import { GetSudachiWords } from "common/sudachi";
 import { searchSentences, type DictNote } from "common/search_sentence";
 import { analyze, type SudachiLine } from "common/sudachi";
+import { tryDownloadTermAudio } from "common/term_audio";
 import { chunk, max, uniq } from "underscore";
 
 interface N2Fields {
@@ -147,12 +148,12 @@ async function chooseNextBestNote(
     return null;
   }
 
-  const originalWords = new Set(await GetMecabWords(originalSentence));
+  const originalWords = new Set(await GetSudachiWords(originalSentence));
 
-  const mecabPromises: Promise<A>[] = options.map(
+  const sudachiPromises: Promise<A>[] = options.map(
     (s) =>
       new Promise(async (resolve) => {
-        const items = await GetMecabWords(s.sentence.sentence);
+        const items = await GetSudachiWords(s.sentence.sentence);
         resolve({
           words: new Set(items),
           original: s,
@@ -160,7 +161,7 @@ async function chooseNextBestNote(
       })
   );
 
-  const dictNoteWordsSets = await Promise.all(mecabPromises);
+  const dictNoteWordsSets = await Promise.all(sudachiPromises);
 
   const scored = dictNoteWordsSets
     .filter((s) => s.words.size > 0)

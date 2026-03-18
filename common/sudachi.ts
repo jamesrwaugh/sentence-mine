@@ -6,9 +6,13 @@ interface SudachiOptions {
   m?: string;
 }
 
+interface SudachiPosLine {
+  pos: string;
+}
+
 export interface SudachiLine {
-  surface: string | undefined;
-  pos: string | undefined;
+  surface: string;
+  pos: SudachiPosLine;
   normalized: string | undefined;
   dictionary: string | undefined;
   reading: string | undefined;
@@ -24,6 +28,19 @@ export const analyze = async (
   const { stdout } = await execa("sudachi", dargs(options), { input: text });
   return parseSudachiOutput(stdout);
 };
+
+export async function GetSudachiWords(text: string): Promise<string[]> {
+  const tokens = await analyze(text);
+
+  const badPos = ["助詞", "記号"];
+  const formatting = ["<", ">", "b", "</"];
+
+  const items = tokens
+    .filter((t) => t.pos && !badPos.includes(t.pos.pos))
+    .map((t) => t.dictionary ?? t.surface);
+
+  return items.filter((item) => !formatting.includes(item));
+}
 
 function parseSudachiOutput(output: string): SudachiLine[] {
   /*
@@ -58,7 +75,7 @@ EOS
   const words: SudachiLine[] = lines.map((line) => {
     const [
       surface,
-      pos,
+      posRaw,
       normalized,
       dictionary,
       reading,
@@ -66,8 +83,15 @@ EOS
       synonymGroupIds,
       oov,
     ] = line.split("\t");
+
+    const posSplit = posRaw?.split(",")!;
+
+    const pos: SudachiPosLine = {
+      pos: posSplit[0]!,
+    };
+
     return {
-      surface,
+      surface: surface!,
       pos,
       normalized,
       dictionary,
@@ -77,5 +101,6 @@ EOS
       oov,
     };
   });
+
   return words;
 }

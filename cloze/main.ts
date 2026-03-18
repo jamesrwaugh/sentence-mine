@@ -1,4 +1,4 @@
-import { testAnkiConnect as testAnkiConnectOrThrow } from "../main/ankiconnect";
+import { testAnkiConnect as testAnkiConnectOrThrow } from "common/ankiconnect";
 import { DataPaths } from "common/IDataItems";
 import { loadCsv, saveCsv } from "common/csv_io";
 import {
@@ -13,7 +13,6 @@ import { GetJouyouRtkKeywords } from "common/rtk_keywords";
 import { analyze } from "common/sudachi";
 import { confirmGoogleCloudConnectedOrError as confirmGoogleCloudConnectedOrThrow } from "./google";
 import { confirmXApiSetupOrError as confirmXApiSetupOrThrow } from "./grok";
-import { tokenizeSync } from "@enjoyjs/node-mecab";
 
 export interface InCsvItem {
   漢字: string;
@@ -246,12 +245,6 @@ async function checkForInputErrors(
 
 async function testExternalConnections(deckName: string, modelName: string) {
   console.log("Testing external connections...");
-
-  // MeCab
-  const b = tokenizeSync("今日");
-  if (b.length == 0 || b[1]?.feature.reading !== "キョウ") {
-    throw new Error("Failed to run MeCab");
-  }
 
   // Sudachi
   const stuff = await analyze("今日");

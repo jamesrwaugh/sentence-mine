@@ -1,7 +1,7 @@
 import { YankiConnect } from "yanki-connect";
 import type { DictionaryEntry } from "./dictionary";
 import { DataPaths } from "./IDataItems";
-import { GetMecabWords } from "./mecab";
+import { GetSudachiWords } from "./sudachi";
 import {
   type RtkKeywordLine,
   FindRtkKeywordsJoinedComma,
@@ -32,7 +32,7 @@ export async function getWordsInMatureCards(
 
   const wordsInSentencesPs = notes
     .map((note) => note.fields.Sentence.value)
-    .map((sentence) => GetMecabWords(sentence));
+    .map((sentence) => GetSudachiWords(sentence));
 
   const wordsInSentences = (await Promise.all(wordsInSentencesPs)).flat();
 

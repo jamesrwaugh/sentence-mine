@@ -1,6 +1,5 @@
 import { YankiConnect } from "yanki-connect";
-import { tokenize } from "@enjoyjs/node-mecab";
-import { GetMecabWords } from "common/mecab";
+import { GetSudachiWords } from "common/sudachi";
 import { Constants } from "common/constants";
 
 export interface Welcome {
@@ -49,7 +48,7 @@ async function BeCool() {
 
   const wordsInSentencesPs = items
     .map((s) => s.fields.Sentence.value)
-    .map((s) => GetMecabWords(s));
+    .map((s) => GetSudachiWords(s));
 
   const wordsInSentences = (await Promise.all(wordsInSentencesPs)).flat();
 

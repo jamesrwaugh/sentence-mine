@@ -1,6 +1,6 @@
 import { ModelFields } from "./search_sentence";
 import { loadSentenceDeck } from "./search_sentence";
-import { tokenizeSync } from "@enjoyjs/node-mecab";
+import { analyze, GetSudachiWords } from "./sudachi";
 
 export type DictformIndex = Record<string, number[]>;
 
@@ -12,16 +12,16 @@ export async function rebuildDictformIndex() {
   deck.noteFields
     // .sort(() => Math.random() - 0.5)
     // .slice(0, 250)
-    .forEach((n, sentenceIndex) => {
+    .forEach(async (n, sentenceIndex) => {
       const searchTerm = n[ModelFields.SentKanji];
       if (!searchTerm) {
         return;
       }
-      const tokens = tokenizeSync(searchTerm);
+      const tokens = await analyze(searchTerm);
       // console.log("-----" + searchTerm + "-----");
-      const badPos = ["助詞", "記号", "BOS/EOS"];
+      const badPos = ["助詞", "記号"];
       for (const token of tokens) {
-        if (token.feature.pos && !badPos.includes(token.feature.pos)) {
+        if (token.pos.pos && !badPos.includes(token.pos.pos)) {
           // console.log(
           //   token.surface +
           //     " " +
@@ -29,7 +29,7 @@ export async function rebuildDictformIndex() {
           //     " " +
           //     token.feature.basicForm
           // );
-          const basicForm = token.feature.basicForm || token.surface;
+          const basicForm = token.dictionary ?? token.surface;
           result[basicForm] = [...(result[basicForm] || []), sentenceIndex];
         }
       }
