@@ -6,9 +6,9 @@ import {
   type SentencesNoteFields,
 } from "common/ankiconnect";
 import { Constants } from "common/constants";
-import { loadDataItems } from "common/data_items";
-import { searchSentences } from "common/search_sentence";
-import { analyze, type SudachiLine } from "common/sudachi";
+import { loadDataItems, loadDataItemsSentenceOnly } from "common/data_items";
+import { searchSentences, searchSentencesOnly } from "common/search_sentence";
+import { analyze, GetSudachiWords, type SudachiLine } from "common/sudachi";
 import { tryDownloadTermAudio } from "common/term_audio";
 import { chunk, uniq } from "underscore";
 import { chooseNextBestNote } from "common/choose_best_note";
@@ -265,10 +265,25 @@ async function loadNotes() {
   }
 }
 
-async function test() {
-  // a
-  const b = await analyze("やる");
-  console.log(b);
+async function resolveErrors() {
+  // 1. Just re-run, since trim() on search string fixed (~20)
+  // 2. Analyze all and just try with each line, to get na-adjectives (~22)
+  // 3. For no term audio, pull from N2 Tango deck (~25)
 }
 
-await loadNotes();
+async function test() {
+  const dataItems = await loadDataItemsSentenceOnly();
+  const s = "お買い得";
+  const b = await analyze(s);
+  const c = await GetSudachiWords(s);
+  const a = searchSentencesOnly(s, dataItems);
+  console.log(b, c, a);
+}
+
+async function testS() {
+  const dataItems = await loadDataItemsSentenceOnly();
+  const a = searchSentencesOnly("買い換え", dataItems);
+  console.log(a);
+}
+
+await test();

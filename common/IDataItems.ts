@@ -10,6 +10,11 @@ export interface IDataItems {
   rtkKeywords: RtkKeywordLine[];
 }
 
+export interface IDataItemsSentencesOnly {
+  dictFormIndex: DictformIndex;
+  deck: SentenceDeck;
+}
+
 export const DataPaths = {
   ankidroneDeckFolder: "./data/ankidrone-deck-folder",
   imageTempFolder: "./data/image-temp",

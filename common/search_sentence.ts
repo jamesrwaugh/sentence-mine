@@ -1,7 +1,12 @@
 import { Deck } from "anki-apkg-parser";
 import type { DictionaryEntry } from "./dictionary";
 import type INote from "anki-apkg-parser/src/core/interfaces/INote";
-import { DataPaths, type IDataItems } from "./IDataItems";
+import {
+  DataPaths,
+  type IDataItems,
+  type IDataItemsSentencesOnly,
+} from "./IDataItems";
+import type { DictformIndex } from "./dictform_index";
 
 // To rebuild the model fields, run the following code:
 // for (const model of Object.values(models)) {
@@ -120,11 +125,11 @@ export async function loadSentenceDeck(): Promise<SentenceDeck> {
   };
 }
 
-export function searchSentences(
+export function searchSentencesOnly(
   searchTerm: string,
-  dataItems: IDataItems
-): DictNote[] {
-  const { dictionary, deck, dictFormIndex } = dataItems;
+  dataItems: IDataItemsSentencesOnly
+): Sentence[] {
+  const { deck, dictFormIndex } = dataItems;
 
   const { notes, media, noteFields } = deck;
 
@@ -132,8 +137,10 @@ export function searchSentences(
     throw new Error("No notes found");
   }
 
+  const searchTermT = searchTerm.trim();
+
   let matchedItems: string[][] = [];
-  const dictFormIndicies = dictFormIndex[searchTerm];
+  const dictFormIndicies = dictFormIndex[searchTermT];
 
   if (dictFormIndicies) {
     matchedItems = dictFormIndicies.map(
@@ -141,23 +148,33 @@ export function searchSentences(
     );
   } else {
     matchedItems = noteFields.filter((note) =>
-      note[ModelFields.SentKanji]?.includes(searchTerm)
+      note[ModelFields.SentKanji]?.includes(searchTermT)
     );
   }
 
   if (matchedItems.length === 0) {
-    console.log(`No matched items found for ${searchTerm}`);
     return [];
   }
 
-  const d = matchedItems
+  return matchedItems
     .map((item) => makeSentence(searchTerm, item, media))
-    .filter((sentence) => sentence !== null)
+    .filter((sentence) => sentence !== null);
+}
+
+export function searchSentences(
+  searchTerm: string,
+  dataItems: IDataItems
+): DictNote[] {
+  const { dictionary } = dataItems;
+
+  const sentences = searchSentencesOnly(searchTerm, dataItems);
+
+  const sentencesWDictInfo = sentences
     .map((sentence) => ({
       sentence,
       dictionary: dictionary[sentence.searchTerm]!,
     }))
     .filter((note) => note.dictionary !== undefined);
 
-  return d;
+  return sentencesWDictInfo;
 }

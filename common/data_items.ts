@@ -1,6 +1,10 @@
 import { loadDictformIndex } from "./dictform_index";
 import { loadDictionary } from "./dictionary";
-import { type IDataItems, DataPaths } from "./IDataItems";
+import {
+  type IDataItems,
+  type IDataItemsSentencesOnly,
+  DataPaths,
+} from "./IDataItems";
 import { GetJouyouRtkKeywords } from "./rtk_keywords";
 import { loadSentenceDeck } from "./search_sentence";
 
@@ -49,4 +53,17 @@ export async function loadDataItems(): Promise<IDataItems> {
   CheckForDataErrors(dataItems);
 
   return dataItems;
+}
+
+export async function loadDataItemsSentenceOnly(): Promise<IDataItemsSentencesOnly> {
+  console.log("Loading dictform index...");
+  const dictFormIndex = await loadDictformIndex(DataPaths.dictformIndex);
+
+  console.log("Loading deck...");
+  const deck = await loadSentenceDeck();
+
+  return {
+    dictFormIndex,
+    deck,
+  };
 }
