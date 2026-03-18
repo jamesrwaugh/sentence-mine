@@ -8,12 +8,20 @@ import {
 import { Constants } from "common/constants";
 import { loadDataItems, loadDataItemsSentenceOnly } from "common/data_items";
 import { searchSentences, searchSentencesOnly } from "common/search_sentence";
-import { analyze, GetSudachiWords, type SudachiLine } from "common/sudachi";
+import {
+  analyze,
+  GetSudachiWords,
+  GetSudachiWordsPlusArg,
+  type SudachiLine,
+} from "common/sudachi";
 import { tryDownloadTermAudio } from "common/term_audio";
 import { chunk, uniq } from "underscore";
 import { chooseNextBestNote } from "common/choose_best_note";
 import { removeHtmlTags } from "common/string_utils";
-import type { IDataItems } from "common/IDataItems";
+import { DataPaths, type IDataItems } from "common/IDataItems";
+import { YankiConnect } from "yanki-connect";
+import { parseAnkiSoundField } from "common/audio";
+import { join } from "node:path";
 
 interface N2Fields {
   SentKanji: AnkiField;
@@ -154,6 +162,37 @@ async function addOne(
   errors: Array<AddError>,
   existingWordsSet: Set<string>
 ) {
+  const termAudioFilename = await tryDownloadTermAudio(
+    cleanRawN2DeckKanji(note.fields.VocabKanji.value),
+    note.fields.VocabFurigana.value
+  );
+
+  if (!termAudioFilename) {
+    errors.push({
+      previousNid: note.nid,
+      kanji: note.fields.VocabKanji.value,
+      error: "No term audio",
+    });
+    Bun.write("errors.json", JSON.stringify(errors));
+    return;
+  }
+
+  return await addOneWTermAudio(
+    note,
+    dataItems,
+    errors,
+    existingWordsSet,
+    termAudioFilename
+  );
+}
+
+async function addOneWTermAudio(
+  note: MiniNote<N2Fields>,
+  dataItems: IDataItems,
+  errors: Array<AddError>,
+  existingWordsSet: Set<string>,
+  termAudioFilename: string
+) {
   const sentences = searchSentences(
     cleanRawN2DeckKanji(note.fields.VocabKanji.value),
     dataItems
@@ -180,21 +219,6 @@ async function addOne(
       previousNid: note.nid,
       kanji: note.fields.VocabKanji.value,
       error: "No best sentence",
-    });
-    Bun.write("errors.json", JSON.stringify(errors));
-    return;
-  }
-
-  const termAudioFilename = await tryDownloadTermAudio(
-    cleanRawN2DeckKanji(note.fields.VocabKanji.value),
-    note.fields.VocabFurigana.value
-  );
-
-  if (!termAudioFilename) {
-    errors.push({
-      previousNid: note.nid,
-      kanji: note.fields.VocabKanji.value,
-      error: "No term audio",
     });
     Bun.write("errors.json", JSON.stringify(errors));
     return;
@@ -265,19 +289,112 @@ async function loadNotes() {
   }
 }
 
+async function downloadAudio(
+  previousNid: number,
+  n2Notes: MiniNote<N2Fields>[]
+) {
+  const c = new YankiConnect();
+
+  const note = n2Notes.find((x) => x.nid === previousNid);
+
+  if (note == null) {
+    throw new Error("Failed to go get note " + previousNid);
+  }
+
+  const parsedFilename = parseAnkiSoundField(note.fields.VocabAudio.value)!;
+
+  const b64FileContent = await c.media.retrieveMediaFile({
+    filename: parsedFilename,
+  });
+
+  if (b64FileContent == false) {
+    throw new Error("Failed to go get Content");
+  }
+
+  const filename = `${note.nid}_${parsedFilename}`;
+
+  Bun.write(
+    join(DataPaths.audioTempFolder, filename),
+    Buffer.from(b64FileContent, "base64")
+  );
+
+  return filename;
+}
+
 async function resolveErrors() {
-  // 1. Just re-run, since trim() on search string fixed (~20)
-  // 2. Analyze all and just try with each line, to get na-adjectives (~22)
-  // 3. For no term audio, pull from N2 Tango deck (~25)
+  // [X] 1. Just re-run, since trim() on search string fixed (~20)
+  // [X] 2. Analyze all and just try with each line, to get na-adjectives (~22)
+  // [X] 3. For no term audio, pull from N2 Tango deck (~15)
+
+  const errors: Array<AddError> = JSON.parse(
+    await Bun.file("errors.json").text()
+  );
+
+  const n2Notes = await queryNotes<N2Fields>(
+    "Ankidrone Essentials V8::4. JLPT Tango N2",
+    ""
+  );
+
+  const noTermErrors = uniq(errors, (e) => e.previousNid).filter(
+    (e) => e.error == "No term audio"
+  );
+
+  const dataItems = await loadDataItems();
+
+  const existingWords = await getAllExistingWordsSet();
+  const existingWordsSet = new Set(existingWords.map((s) => s.word));
+
+  const existingNoteWords = new Set(
+    (
+      await queryNotes<SentencesNoteFields>(
+        Constants.SentenceDeckName,
+        "tag:n2"
+      )
+    ).map((s) => s.fields.Word.value)
+  );
+
+  const errorsToAdd = noTermErrors.filter(
+    (x) => !existingNoteWords.has(cleanRawN2DeckKanji(x.kanji))
+  );
+
+  for (const error of errorsToAdd) {
+    const note = n2Notes.find((x) => x.nid === error.previousNid);
+
+    if (note == null) {
+      throw new Error("Failed to go get note " + error.previousNid);
+    }
+
+    const termFilename = await downloadAudio(error.previousNid, n2Notes);
+
+    await addOneWTermAudio(
+      note,
+      dataItems,
+      errors,
+      existingWordsSet,
+      termFilename
+    );
+  }
 }
 
 async function test() {
   const dataItems = await loadDataItemsSentenceOnly();
-  const s = "お買い得";
+  const s = "建築 ";
   const b = await analyze(s);
   const c = await GetSudachiWords(s);
   const a = searchSentencesOnly(s, dataItems);
   console.log(b, c, a);
+}
+
+async function test3() {
+  const errors: Array<AddError> = JSON.parse(
+    await Bun.file("errors.json").text()
+  );
+
+  const ads = uniq(errors, (e) => e.kanji)
+    .filter((x) => cleanRawN2DeckKanji(x.kanji).endsWith("な"))
+    .map((x) => cleanRawN2DeckKanji(x.kanji));
+
+  console.log(ads);
 }
 
 async function testS() {
@@ -286,4 +403,4 @@ async function testS() {
   console.log(a);
 }
 
-await test();
+await test3();

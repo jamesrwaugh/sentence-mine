@@ -6,7 +6,7 @@ import {
   type IDataItems,
   type IDataItemsSentencesOnly,
 } from "./IDataItems";
-import type { DictformIndex } from "./dictform_index";
+import { parseAnkiSoundField } from "./audio";
 
 // To rebuild the model fields, run the following code:
 // for (const model of Object.values(models)) {
@@ -29,15 +29,6 @@ export enum ModelFields {
   Focus = 13,
 }
 
-// [sound:NDL_3159_Male.ogg] -> NDL_3159_Male.ogg
-function parseSound(sound: string): string | null {
-  const match = sound.match(/\[sound:(.*)\]/);
-  if (!match) {
-    return null;
-  }
-  return match[1] ?? null;
-}
-
 export interface Sentence {
   searchTerm: string;
   sentence: string;
@@ -58,7 +49,7 @@ function makeSentence(
   const audioNames = item[ModelFields.SentAudio]?.split(/<br\/?>/);
 
   const audioFilenames = audioNames
-    ?.map((name) => parseSound(name))
+    ?.map((name) => parseAnkiSoundField(name))
     .filter((r) => r !== null)
     .map((r) => reverseMedia[r]);
 
@@ -172,7 +163,7 @@ export function searchSentences(
   const sentencesWDictInfo = sentences
     .map((sentence) => ({
       sentence,
-      dictionary: dictionary[sentence.searchTerm]!,
+      dictionary: dictionary[sentence.searchTerm.trim()]!,
     }))
     .filter((note) => note.dictionary !== undefined);
 

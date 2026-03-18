@@ -30,6 +30,19 @@ export const analyze = async (
 };
 
 export async function GetSudachiWords(text: string): Promise<string[]> {
+  const result = await GetSudachiWordsPlusArg(text, null);
+  return result.words;
+}
+
+interface SudachiPlusArgResult<T> {
+  words: string[];
+  arg: T;
+}
+
+export async function GetSudachiWordsPlusArg<T>(
+  text: string,
+  arg: T
+): Promise<SudachiPlusArgResult<T>> {
   const tokens = await analyze(text);
 
   const badPos = ["助詞", "記号"];
@@ -39,7 +52,10 @@ export async function GetSudachiWords(text: string): Promise<string[]> {
     .filter((t) => t.pos && !badPos.includes(t.pos.pos))
     .map((t) => t.dictionary ?? t.surface);
 
-  return items.filter((item) => !formatting.includes(item));
+  return {
+    words: items.filter((item) => !formatting.includes(item)),
+    arg: arg,
+  };
 }
 
 function parseSudachiOutput(output: string): SudachiLine[] {
