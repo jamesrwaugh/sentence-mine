@@ -7,11 +7,13 @@ import {
 } from "common/ankiconnect";
 import { Constants } from "common/constants";
 import { loadDataItems } from "common/data_items";
-import { GetSudachiWords } from "common/sudachi";
-import { searchSentences, type DictNote } from "common/search_sentence";
+import { searchSentences } from "common/search_sentence";
 import { analyze, type SudachiLine } from "common/sudachi";
 import { tryDownloadTermAudio } from "common/term_audio";
-import { chunk, max, uniq } from "underscore";
+import { chunk, uniq } from "underscore";
+import { chooseNextBestNote } from "common/choose_best_note";
+import { removeHtmlTags } from "common/string_utils";
+import type { IDataItems } from "common/IDataItems";
 
 interface N2Fields {
   SentKanji: AnkiField;
@@ -33,6 +35,14 @@ interface N2Fields {
 interface WordAndNid {
   nid: number;
   word: string;
+}
+
+function removeNumbering(s: string) {
+  return s.replaceAll(/\[.*?\]/g, "");
+}
+
+function cleanRawN2DeckKanji(s: string) {
+  return removeNumbering(removeHtmlTags(s));
 }
 
 async function getAllExistingWordsSet(): Promise<Array<WordAndNid>> {
@@ -60,9 +70,7 @@ async function getAllN2WordsSet(): Promise<{
 
   const b: WordAndNid[] = notes.map((x) => ({
     nid: x.nid,
-    word: x.fields.VocabKanji.value
-      .replaceAll(/\[.*?\]/g, "")
-      .replaceAll(/<[^>]*>?/gi, ""),
+    word: cleanRawN2DeckKanji(x.fields.VocabKanji.value),
   }));
 
   return {
@@ -134,94 +142,126 @@ async function getNeededNotesList() {
   console.log("OK");
 }
 
-interface A {
-  words: Set<string>;
-  original: DictNote;
+interface AddError {
+  previousNid: number;
+  kanji: string;
+  error: string;
 }
 
-async function chooseNextBestNote(
-  originalSentence: string,
-  options: DictNote[],
-  matureWordSet: Set<string>
-): Promise<DictNote | null> {
-  if (options.length == 0) {
-    return null;
-  }
-
-  const originalWords = new Set(await GetSudachiWords(originalSentence));
-
-  const sudachiPromises: Promise<A>[] = options.map(
-    (s) =>
-      new Promise(async (resolve) => {
-        const items = await GetSudachiWords(s.sentence.sentence);
-        resolve({
-          words: new Set(items),
-          original: s,
-        });
-      })
+async function addOne(
+  note: MiniNote<N2Fields>,
+  dataItems: IDataItems,
+  errors: Array<AddError>,
+  existingWordsSet: Set<string>
+) {
+  const sentences = searchSentences(
+    cleanRawN2DeckKanji(note.fields.VocabKanji.value),
+    dataItems
   );
 
-  const dictNoteWordsSets = await Promise.all(sudachiPromises);
-
-  const scored = dictNoteWordsSets
-    .filter((s) => s.words.size > 0)
-    .map(({ words, original }) => {
-      const intersection = words.intersection(matureWordSet);
-      const intersectionPct = intersection.size / words.size;
-      const diffPenalty =
-        Math.abs(words.size - originalWords.size) / originalWords.size;
-      return {
-        original: original,
-        score: intersectionPct - diffPenalty,
-      };
+  if (sentences.length === 0) {
+    errors.push({
+      previousNid: note.nid,
+      kanji: note.fields.VocabKanji.value,
+      error: "No sentences",
     });
-
-  const bestScore = max(scored, (a) => a.score);
-
-  if (typeof bestScore == "number") {
-    return null;
+    Bun.write("errors.json", JSON.stringify(errors));
+    return;
   }
 
-  return bestScore.original;
+  const best = await chooseNextBestNote(
+    cleanRawN2DeckKanji(note.fields.SentKanji.value),
+    sentences,
+    existingWordsSet
+  );
+
+  if (!best) {
+    errors.push({
+      previousNid: note.nid,
+      kanji: note.fields.VocabKanji.value,
+      error: "No best sentence",
+    });
+    Bun.write("errors.json", JSON.stringify(errors));
+    return;
+  }
+
+  const termAudioFilename = await tryDownloadTermAudio(
+    cleanRawN2DeckKanji(note.fields.VocabKanji.value),
+    note.fields.VocabFurigana.value
+  );
+
+  if (!termAudioFilename) {
+    errors.push({
+      previousNid: note.nid,
+      kanji: note.fields.VocabKanji.value,
+      error: "No term audio",
+    });
+    Bun.write("errors.json", JSON.stringify(errors));
+    return;
+  }
+
+  const nid = await addNote(
+    Constants.SentenceDeckName,
+    Constants.SentenceDeckModelName,
+    { note: best, termAudioFilename: termAudioFilename },
+    dataItems.rtkKeywords,
+    ["n2"]
+  );
+
+  console.log(
+    note.fields.VocabKanji.value,
+    "-->",
+    best?.sentence.sentence,
+    " ---> ",
+    nid
+  );
 }
 
 async function loadNotes() {
   const existingWords = await getAllExistingWordsSet();
   const existingWordsSet = new Set(existingWords.map((s) => s.word));
 
-  const notes: MiniNote<N2Fields>[] = JSON.parse(
+  const allN2Notes: MiniNote<N2Fields>[] = JSON.parse(
     await Bun.file("words_every.json").text()
   );
 
   const dataItems = await loadDataItems();
 
-  for (const note of notes.slice(0, 10)) {
-    const sentences = searchSentences(note.fields.VocabKanji.value, dataItems);
+  const errors: Array<AddError> = JSON.parse(
+    await Bun.file("errors.json").text()
+  );
 
-    const best = await chooseNextBestNote(
-      note.fields.SentKanji.value.replaceAll(/<[^>]*>?/gi, ""),
-      sentences,
-      existingWordsSet
-    );
+  const existingNotes = new Set(
+    (
+      await queryNotes<SentencesNoteFields>(
+        Constants.SentenceDeckName,
+        "tag:n2"
+      )
+    ).map((s) => s.fields.Word.value)
+  );
 
-    if (!best) {
-      continue;
+  const notesToAdd = allN2Notes.filter(
+    (n) => !existingNotes.has(cleanRawN2DeckKanji(n.fields.VocabKanji.value))
+  );
+
+  console.log(
+    notesToAdd.length,
+    "more notes to add",
+    existingNotes.size,
+    "existing notes"
+  );
+
+  for (const note of notesToAdd) {
+    try {
+      await addOne(note, dataItems, errors, existingWordsSet);
+    } catch (ex) {
+      errors.push({
+        previousNid: note.nid,
+        kanji: note.fields.VocabKanji.value,
+        error: `Exception: ${ex}`,
+      });
+      Bun.write("errors.json", JSON.stringify(errors));
     }
-
-    const nid = await addNote(
-      Constants.SentenceDeckName,
-      Constants.SentenceDeckModelName,
-      { note: best, audioFilename: best.sentence.randomAudioFilename },
-      dataItems.rtkKeywords
-    );
-
-    console.log(
-      note.fields.VocabKanji,
-      "-->",
-      best?.sentence.sentence,
-      " ---> ",
-      nid
-    );
   }
 }
 

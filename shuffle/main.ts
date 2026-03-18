@@ -2,8 +2,6 @@ import { loadDataItems } from "common/data_items";
 import { searchSentences, type DictNote } from "common/search_sentence";
 import { tryDownloadTermAudio } from "common/term_audio";
 import { updateTheNote } from "../main/note_actions";
-import { GetSudachiWords } from "common/sudachi";
-import { max } from "underscore";
 import {
   getWordsInMatureCards,
   queryNotes,
@@ -11,6 +9,7 @@ import {
   type SentencesNoteFields,
 } from "common/ankiconnect";
 import { Constants } from "common/constants";
+import { chooseNextBestNote } from "common/choose_best_note";
 
 async function getNotesToUpdate(
   deckName: string
@@ -39,57 +38,6 @@ async function updateNote(deckName: string, nid: number, note: DictNote) {
   }
 
   await updateTheNote(nid, note, readingAudioFilename);
-}
-
-interface A {
-  words: Set<string>;
-  original: DictNote;
-}
-
-async function chooseNextBestNote(
-  originalSentence: string,
-  options: DictNote[],
-  matureWordSet: Set<string>
-): Promise<DictNote | null> {
-  if (options.length == 0) {
-    return null;
-  }
-
-  const originalWords = new Set(await GetSudachiWords(originalSentence));
-
-  const sudachiPromises: Promise<A>[] = options.map(
-    (s) =>
-      new Promise(async (resolve) => {
-        const items = await GetSudachiWords(s.sentence.sentence);
-        resolve({
-          words: new Set(items),
-          original: s,
-        });
-      })
-  );
-
-  const dictNoteWordsSets = await Promise.all(sudachiPromises);
-
-  const scored = dictNoteWordsSets
-    .filter((s) => s.words.size > 0)
-    .map(({ words, original }) => {
-      const intersection = words.intersection(matureWordSet);
-      const intersectionPct = intersection.size / words.size;
-      const diffPenalty =
-        Math.abs(words.size - originalWords.size) / originalWords.size;
-      return {
-        original: original,
-        score: intersectionPct - diffPenalty,
-      };
-    });
-
-  const bestScore = max(scored, (a) => a.score);
-
-  if (typeof bestScore == "number") {
-    return null;
-  }
-
-  return bestScore.original;
 }
 
 async function go() {

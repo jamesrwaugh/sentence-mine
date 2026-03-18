@@ -8,6 +8,7 @@ import {
 } from "./rtk_keywords";
 import { join, resolve } from "node:path";
 import type { DictNote } from "./search_sentence";
+import { nameof } from "./nameof";
 
 export interface SentencesNoteFields {
   Word: AnkiField;
@@ -75,32 +76,35 @@ function resolveAudioPaths(
 
 export interface NoteWithAudio {
   note: DictNote;
-  audioFilename: string;
+  termAudioFilename: string;
 }
 
 export async function addNote(
   deckName: string,
   modelName: string,
   noteWithAudio: NoteWithAudio,
-  rtkKeywords: RtkKeywordLine[]
+  rtkKeywords: RtkKeywordLine[],
+  tags: string[] = []
 ) {
-  const { note, audioFilename } = noteWithAudio;
+  const { note, termAudioFilename } = noteWithAudio;
 
   const { absoluteSentenceAudioPath, absoluteAuthPath } = resolveAudioPaths(
-    audioFilename,
+    termAudioFilename,
     note.sentence.randomAudioFilename
   );
+
+  type Fields = SentencesNoteFields;
 
   const item: Parameters<typeof client.note.addNote>[0]["note"] = {
     deckName,
     modelName,
     fields: {
-      Word: note.sentence.searchTerm,
-      Reading: note.dictionary.reading,
-      Glossary: makeGlossary(note.dictionary.glossary),
-      Sentence: note.sentence.sentence,
-      "Sentence-English": note.sentence.eng,
-      WordRtkKeywords: FindRtkKeywordsJoinedComma(
+      [nameof<Fields>("Word")]: note.sentence.searchTerm,
+      [nameof<Fields>("Reading")]: note.dictionary.reading,
+      [nameof<Fields>("Glossary")]: makeGlossary(note.dictionary.glossary),
+      [nameof<Fields>("Sentence")]: note.sentence.sentence,
+      [nameof<Fields>("Sentence-English")]: note.sentence.eng,
+      [nameof<Fields>("WordRtkKeywords")]: FindRtkKeywordsJoinedComma(
         note.sentence.searchTerm,
         rtkKeywords
       ),
@@ -109,15 +113,15 @@ export async function addNote(
       {
         filename: `${note.sentence.searchTerm}_sentence_${note.sentence.randomAudioFilename}.mp3`,
         path: absoluteSentenceAudioPath,
-        fields: ["Sentence-Audio"],
+        fields: [nameof<Fields>("Sentence-Audio")],
       },
       {
         filename: `${note.sentence.searchTerm}_reading.mp3`,
         path: absoluteAuthPath,
-        fields: ["Audio"],
+        fields: [nameof<Fields>("Audio")],
       },
     ],
-    tags: ["mined"],
+    tags: ["mined", ...tags],
     options: {
       duplicateScope: "deck",
       duplicateScopeOptions: {
@@ -137,34 +141,36 @@ export async function updateNote(
   existingNid: number,
   noteWithAudio: NoteWithAudio
 ): Promise<null> {
-  const { note, audioFilename } = noteWithAudio;
+  const { note, termAudioFilename: audioFilename } = noteWithAudio;
 
   const { absoluteSentenceAudioPath, absoluteAuthPath } = resolveAudioPaths(
     audioFilename,
     note.sentence.randomAudioFilename
   );
 
+  type Fields = SentencesNoteFields;
+
   const item: Parameters<typeof client.note.updateNote>[0]["note"] = {
     id: existingNid,
     fields: {
-      Word: note.sentence.searchTerm,
-      Reading: note.dictionary.reading,
-      Glossary: makeGlossary(note.dictionary.glossary),
-      Sentence: note.sentence.sentence,
-      "Sentence-English": note.sentence.eng,
+      [nameof<Fields>("Word")]: note.sentence.searchTerm,
+      [nameof<Fields>("Reading")]: note.dictionary.reading,
+      [nameof<Fields>("Glossary")]: makeGlossary(note.dictionary.glossary),
+      [nameof<Fields>("Sentence")]: note.sentence.sentence,
+      [nameof<Fields>("Sentence-English")]: note.sentence.eng,
     },
     audio: [
       {
         filename: `${note.sentence.searchTerm}_sentence_${note.sentence.randomAudioFilename}.mp3`,
         path: absoluteSentenceAudioPath,
         replace: true,
-        fields: ["Sentence-Audio"],
+        fields: [nameof<Fields>("Sentence-Audio")],
       },
       {
         filename: `${note.sentence.searchTerm}_reading.mp3`,
         path: absoluteAuthPath,
         replace: true,
-        fields: ["Audio"],
+        fields: [nameof<Fields>("Audio")],
       },
     ],
     tags: ["mined"],
@@ -177,8 +183,12 @@ export async function updateNote(
   return nid;
 }
 
-export async function addImage(nid: number, kanji: string, image: string) {
-  const imagePath = join(DataPaths.imageTempFolder, image);
+export async function addImage(
+  nid: number,
+  kanji: string,
+  imageFilename: string
+) {
+  const imagePath = join(DataPaths.imageTempFolder, imageFilename);
   const imageData = await Bun.file(imagePath).arrayBuffer();
   const imageBase64 = Buffer.from(imageData).toString("base64");
 
@@ -187,10 +197,10 @@ export async function addImage(nid: number, kanji: string, image: string) {
       fields: {},
       picture: [
         {
-          filename: `${kanji}_${image}`,
+          filename: `${kanji}_${imageFilename}`,
           data: imageBase64,
           replace: true,
-          fields: ["Picture"],
+          fields: [nameof<SentencesNoteFields>("Picture")],
         },
       ],
       id: nid,

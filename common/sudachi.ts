@@ -12,7 +12,7 @@ interface SudachiPosLine {
 
 export interface SudachiLine {
   surface: string;
-  pos: SudachiPosLine;
+  pos: SudachiPosLine | undefined;
   normalized: string | undefined;
   dictionary: string | undefined;
   reading: string | undefined;
@@ -84,15 +84,16 @@ EOS
       oov,
     ] = line.split("\t");
 
-    const posSplit = posRaw?.split(",")!;
-
-    const pos: SudachiPosLine = {
-      pos: posSplit[0]!,
-    };
+    const posSplit = posRaw?.split(",");
 
     return {
-      surface: surface!,
-      pos,
+      surface: surface ?? "",
+      pos:
+        (posSplit?.length ?? 0) > 0
+          ? {
+              pos: posSplit![0]!,
+            }
+          : undefined,
       normalized,
       dictionary,
       reading,

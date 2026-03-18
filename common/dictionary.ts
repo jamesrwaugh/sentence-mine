@@ -76,14 +76,13 @@ export async function loadYomichanDictionary(): Promise<YomichanDictEntry[]> {
     join(DataPaths.jitendexYomitanFolder, "term_bank_*.json")
   );
 
-  const dictEntries: YomichanDictEntry[] = [];
+  const filenames = await Array.fromAsync(glob.scan());
 
-  for await (const file of glob.scan()) {
-    const more = await loadYomichansFromFile(file);
-    dictEntries.push(...more);
-  }
+  const loadPromises = filenames.map((filename) =>
+    loadYomichansFromFile(filename)
+  );
 
-  return dictEntries;
+  return (await Promise.all(loadPromises)).flat();
 }
 
 export interface DictionaryEntry {

@@ -35,7 +35,7 @@ async function addTheNote(
     const nid = await addNote(
       deckName,
       modelName,
-      { note, audioFilename },
+      { note, termAudioFilename: audioFilename },
       rtkKeywords
     );
 
@@ -75,7 +75,7 @@ export async function updateTheNote(
   try {
     await updateNote(existingNid, {
       note,
-      audioFilename,
+      termAudioFilename: audioFilename,
     });
   } catch (e) {
     const message = (e as Error)?.message ?? "";
