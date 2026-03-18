@@ -191,14 +191,21 @@ export async function addImage(
   const imagePath = join(DataPaths.imageTempFolder, imageFilename);
   const imageData = await Bun.file(imagePath).arrayBuffer();
   const imageBase64 = Buffer.from(imageData).toString("base64");
+  return await addImageBase64(nid, `${kanji}_${imageFilename}`, imageBase64);
+}
 
+export async function addImageBase64(
+  nid: number,
+  mediaFilename: string,
+  imageB64Content: string
+) {
   await client.note.updateNote({
     note: {
       fields: {},
       picture: [
         {
-          filename: `${kanji}_${imageFilename}`,
-          data: imageBase64,
+          filename: mediaFilename,
+          data: imageB64Content,
           replace: true,
           fields: [nameof<SentencesNoteFields>("Picture")],
         },

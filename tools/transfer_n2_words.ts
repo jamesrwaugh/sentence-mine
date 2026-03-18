@@ -1,4 +1,5 @@
 import {
+  addImageBase64,
   addNote,
   queryNotes,
   type AnkiField,
@@ -321,6 +322,79 @@ async function downloadAudio(
   return filename;
 }
 
+function parseImgFilename(html: string) {
+  // <img src=\"3527982i.webp\">
+
+  const match = html.match(/src=\"(.*?)\"/);
+  if (!match) {
+    return null;
+  }
+  return match[1] ?? null;
+}
+
+async function transferPictures() {
+  const n2Notes = await queryNotes<N2Fields>(
+    "Ankidrone Essentials V8::4. JLPT Tango N2",
+    ""
+  );
+
+  const n2ByVocabDict = n2Notes.reduce(
+    (dict, note) => {
+      dict[cleanRawN2DeckKanji(note.fields.VocabKanji.value)] = note;
+      return dict;
+    },
+    {} as Record<string, MiniNote<N2Fields>>
+  );
+
+  const sentenceNotesNoPic = (
+    await queryNotes<SentencesNoteFields>(Constants.SentenceDeckName, "tag:n2")
+  ).filter((x) => x.fields.Picture.value === "");
+
+  const c = new YankiConnect();
+
+  for (const note of sentenceNotesNoPic) {
+    const n2Note =
+      n2ByVocabDict[note.fields.Word.value] ??
+      n2ByVocabDict[note.fields.Word.value + "な"];
+
+    if (!n2Note) {
+      console.log(`No N2 note for ${note.fields.Word.value}`);
+      continue;
+    }
+
+    if (n2Note.fields.Image.value.length === 0) {
+      console.log(`No Picture in ${note.fields.Word.value}`);
+      continue;
+    }
+
+    const imgFilename = parseImgFilename(n2Note.fields.Image.value);
+
+    if (!imgFilename) {
+      console.log(
+        `Could not parse image ${note.fields.Word.value} - ${n2Note.fields.Image.value}`
+      );
+      continue;
+    }
+
+    const b64FileContent = await c.media.retrieveMediaFile({
+      filename: imgFilename,
+    });
+
+    if (b64FileContent === false) {
+      console.log(
+        `Could not pull image content for ${note.fields.Word.value} - ${imgFilename}`
+      );
+      continue;
+    }
+
+    await addImageBase64(
+      note.nid,
+      `${note.nid}_${imgFilename}`,
+      b64FileContent
+    );
+  }
+}
+
 async function resolveErrors() {
   // [X] 1. Just re-run, since trim() on search string fixed (~20)
   // [X] 2. Analyze all and just try with each line, to get na-adjectives (~22)
@@ -386,15 +460,13 @@ async function test() {
 }
 
 async function test3() {
-  const errors: Array<AddError> = JSON.parse(
-    await Bun.file("errors.json").text()
-  );
+  const c = new YankiConnect();
 
-  const ads = uniq(errors, (e) => e.kanji)
-    .filter((x) => cleanRawN2DeckKanji(x.kanji).endsWith("な"))
-    .map((x) => cleanRawN2DeckKanji(x.kanji));
+  const b64FileContent = await c.media.retrieveMediaFile({
+    filename: "3527982i.webp",
+  });
 
-  console.log(ads);
+  console.log(b64FileContent);
 }
 
 async function testS() {
@@ -403,4 +475,4 @@ async function testS() {
   console.log(a);
 }
 
-await test3();
+await transferPictures();
