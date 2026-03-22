@@ -1,6 +1,9 @@
 import { xai } from "@ai-sdk/xai";
 import { generateObject } from "ai";
-import { ResponseSchema, type SentenceSearchFn } from "./sentence_schema";
+import {
+  SentencesResponseSchema,
+  type SentenceSearchFn,
+} from "./sentence_schema";
 
 export const searchGrok: SentenceSearchFn = async (
   term: string,
@@ -10,7 +13,7 @@ export const searchGrok: SentenceSearchFn = async (
   try {
     const result = await generateObject({
       model: xai("grok-4-fast-non-reasoning"),
-      schema: ResponseSchema,
+      schema: SentencesResponseSchema,
       prompt: `
           Generate ${max_sentences} example sentences in Japanese for the word "${term}". The sentences should reflect the most common usages of the word, and include context to help a non-native speaker understand the nuance. ${other_terms.length > 0 ? "Choose a meaning distinct from these terms: " + other_terms.join(", ") + "." : ""}
         `,

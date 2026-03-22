@@ -6,7 +6,6 @@ import {
 } from "common/rtk_keywords";
 import { join, resolve } from "node:path";
 import type { SentenceMediaData } from "./generate_cards";
-import { analyze } from "common/sudachi";
 import { nameof } from "common/nameof";
 import type { InCsvItem } from "./main";
 import { type AnkiField, queryNotes } from "common/ankiconnect";
@@ -67,43 +66,44 @@ export async function addClozeNote(
     termReading: termReading,
     sentence,
     termAudioFilename,
-    sentenceAudioFilename,
+    previewAudioFilename,
+    clozedSentence,
   } = MediaData;
 
   const { absoluteSentenceAudioPath, absoluteTermAudioPath } =
-    resolveAudioPaths(termAudioFilename, sentenceAudioFilename);
+    resolveAudioPaths(termAudioFilename, previewAudioFilename);
 
-  const { sentence: clozedSentence, found } = await getClozeSentence(
-    term,
-    sentence.japanese
-  );
+  type T = ClozeNoteFields;
 
   const noteItem: Parameters<typeof client.note.addNote>[0]["note"] = {
     deckName,
     modelName,
     fields: {
-      Text: clozedSentence,
-      WordRtkKeywords: FindRtkKeywordsJoinedComma(term, rtkKeywords),
-      ClozeAnswer: term,
-      ClozeReading: termReading,
-      English: sentence.english,
-      EnglishContext: sentence.english_context,
-      AlternativesJson: JSON.stringify(Alternatives),
-      GroupId: GroupId,
+      [nameof<T>("Text")]: clozedSentence,
+      [nameof<T>("WordRtkKeywords")]: FindRtkKeywordsJoinedComma(
+        term,
+        rtkKeywords
+      ),
+      [nameof<T>("ClozeAnswer")]: term,
+      [nameof<T>("ClozeReading")]: termReading,
+      [nameof<T>("English")]: sentence.english,
+      [nameof<T>("EnglishContext")]: sentence.english_context,
+      [nameof<T>("AlternativesJson")]: JSON.stringify(Alternatives),
+      [nameof<T>("GroupId")]: GroupId,
     },
     audio: [
       {
-        filename: `${term}_sentence_${sentenceAudioFilename}.mp3`,
+        filename: `${term}_preview_${previewAudioFilename}.mp3`,
         path: absoluteSentenceAudioPath,
-        fields: ["Sentence-Audio"],
+        fields: [nameof<T>("PreviewAudio")],
       },
       {
         filename: `${term}_reading.mp3`,
         path: absoluteTermAudioPath,
-        fields: ["ClozeAudio"],
+        fields: [nameof<T>("ClozeAudio")],
       },
     ],
-    tags: ["mined", ...(!found ? ["cnf"] : [])],
+    tags: ["mined"],
     options: {
       duplicateScope: "deck",
       duplicateScopeOptions: {
@@ -121,62 +121,6 @@ export async function addClozeNote(
   }
 
   return nid;
-}
-
-async function getNormalizedFormMaybe(term: string) {
-  const rawTokens = await analyze(term);
-  const a = rawTokens.find((t) => t.surface == term);
-  return a?.normalized ?? a?.dictionary ?? term;
-}
-
-export async function getClozeSentence(
-  term: string,
-  sentence: string
-): Promise<{
-  sentence: string;
-  found: boolean;
-}> {
-  {
-    // Try fancy way, tokenize the sentence and look for
-    // the normalized form in both.
-    const badPos = ["BOS/EOS", "BOS", "EOS"];
-    const termNormalized = await getNormalizedFormMaybe(term);
-    const rawTokens = await analyze(sentence);
-
-    const cleanTokens = rawTokens.filter((t) =>
-      t.surface ? !badPos.includes(t.surface) : true
-    );
-
-    let found = false;
-
-    const clozedSentence = cleanTokens.reduce((acc, term) => {
-      if (term.normalized === termNormalized) {
-        found = true;
-        return `${acc}{{c1::${term.surface}}}`;
-      }
-      return `${acc}${term.surface}`;
-    }, "");
-
-    if (found) {
-      return {
-        sentence: clozedSentence,
-        found,
-      };
-    }
-  }
-
-  // Easy way out, if the raw term is just in the sentence
-  if (sentence.includes(term)) {
-    return {
-      found: true,
-      sentence: sentence.replace(term, `{{c1::${term}}}`),
-    };
-  }
-
-  return {
-    found: false,
-    sentence: sentence,
-  };
 }
 
 export async function updateExistingGroupIdAlternatives(

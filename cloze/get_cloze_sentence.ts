@@ -1,28 +1,4 @@
-import { loadDataItems } from "common/data_items";
-import { searchSentences } from "common/search_sentence";
-import { analyze, analyzeSync, GetSudachiWords } from "common/sudachi";
-
-function findNormalizedForm(searchTerm: string): string | null {
-  const item = analyzeSync(searchTerm, { all: true, m: "c" });
-
-  if (item.length === 1) {
-    return item[0]?.normalized ?? null;
-  }
-
-  const goodPoses = ["形容詞", "動詞", "名詞", "形状詞"];
-
-  const usefulCount = item.filter(
-    (x) => x.pos?.pos && goodPoses.includes(x.pos.pos)
-  );
-
-  if (usefulCount.length === 1) {
-    return usefulCount[0]?.normalized ?? null;
-  }
-
-  console.log("Unable to normalize", searchTerm);
-
-  return null;
-}
+import { analyze } from "common/sudachi";
 
 async function getNormalizedFormMaybe(term: string) {
   const rawTokens = await analyze(term);
@@ -79,13 +55,3 @@ export async function getClozeSentence(
     sentence: sentence,
   };
 }
-
-async function main() {
-  const term = "詰まる";
-  const sentence = "このパズルは難しくて詰まった";
-
-  const b = await getClozeSentence(term, sentence);
-  console.log(b);
-}
-
-await main();

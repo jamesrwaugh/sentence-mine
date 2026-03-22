@@ -156,6 +156,3 @@ export async function tryDownloadTermAudio(
 
   return undefined;
 }
-
-// const f = await tryDownloadJpod101Audio("同意", "ど");
-// console.log(f);

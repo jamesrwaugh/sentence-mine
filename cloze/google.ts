@@ -11,6 +11,7 @@ const feminineVoices = [
   "ja-JP-Chirp3-HD-Erinome",
   "ja-JP-Chirp3-HD-Gacrux",
   "ja-JP-Chirp3-HD-Laomedeia",
+  "ja-JP-Chirp3-HD-Vindemiatrix",
 ];
 
 const masculineVoices = [

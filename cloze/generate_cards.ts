@@ -1,19 +1,23 @@
 import { searchGrok } from "./grok";
 import { tryDownloadTermAudio } from "../common/term_audio";
 import { GetJouyouRtkKeywords } from "common/rtk_keywords";
-import type { SentenceSchema } from "./sentence_schema";
-import { z } from "zod";
+import {
+  type SentencesResponseType,
+  type SentenceSchemaType,
+} from "./sentence_schema";
 import { generateAudioToFile } from "./google";
 import type { InCsvItem, InCsvGroup } from "./main";
 import { uniq } from "underscore";
 import { addClozeNote, type AlternativeJson } from "./add_cards";
+import { getClozeSentence } from "./get_cloze_sentence";
 
 export interface SentenceMediaData {
   term: string;
   termReading: string;
-  sentence: z.infer<typeof SentenceSchema>;
+  sentence: SentenceSchemaType;
+  clozedSentence: string;
   termAudioFilename: string;
-  sentenceAudioFilename: string;
+  previewAudioFilename: string;
 }
 
 interface SentenceMediaResult {
@@ -30,34 +34,27 @@ interface ItemIn {
 export type AddErrorMessage =
   | "no-rtk-keywords"
   | "no-sentences"
+  | "no-clozed-sentences"
   | "no-audio"
   | "data-error";
-
-interface GeneratedA {
-  media: SentenceMediaResult;
-  inCsvItem: InCsvItem;
-}
 
 export async function generateMediaForGroup(
   group: InCsvGroup
 ): Promise<ItemIn[]> {
-  const genPromises = group.Items.map(
-    (i) =>
-      new Promise<GeneratedA>(async (resolve) => {
-        const otherTerms = group.Items.map((item) => item.漢字).filter(
-          (term) => term !== i.漢字
-        );
-        resolve({
-          media: await generateMediaForSingle(i.漢字, otherTerms),
-          inCsvItem: i,
-        });
-      })
-  );
+  async function generatePromise(item: InCsvItem) {
+    const otherTerms = group.Items.map((item) => item.漢字).filter(
+      (term) => term !== item.漢字
+    );
 
+    return {
+      media: await generateMediaForTerm(item.漢字, otherTerms),
+      inCsvItem: item,
+    };
+  }
+
+  const genPromises = group.Items.map((item) => generatePromise(item));
   const pss = await Promise.all(genPromises);
-
   const good = pss.filter((p) => p.media.error == undefined);
-
   const bad = pss.filter((p) => p.media.error != undefined);
 
   if (bad.length > 0) {
@@ -79,7 +76,37 @@ export async function generateMediaForGroup(
   }));
 }
 
-export async function generateMediaForSingle(
+async function generateMediaForOneSentence(
+  term: string,
+  termReading: string,
+  termAudioFilename: string,
+  sentence: SentenceSchemaType
+): Promise<SentenceMediaData | null> {
+  const clozed = await getClozeSentence(term, sentence.japanese);
+
+  if (!clozed.found) {
+    return null;
+  }
+
+  function getFillerSentence(sentence: string): string {
+    return sentence.replace(/{{.*?}}/, "(ナニナニ)");
+  }
+
+  const fillerSentence = getFillerSentence(clozed.sentence);
+
+  const previewAudioFilename = await generateAudioToFile(fillerSentence);
+
+  return {
+    term: term,
+    termReading: termReading,
+    clozedSentence: clozed.sentence,
+    sentence,
+    termAudioFilename: termAudioFilename,
+    previewAudioFilename: previewAudioFilename,
+  };
+}
+
+export async function generateMediaForTerm(
   term: string,
   other_terms: string[]
 ): Promise<SentenceMediaResult> {
@@ -96,7 +123,7 @@ export async function generateMediaForSingle(
 
   const readingAudioFilename = await tryDownloadTermAudio(
     term,
-    sentences?.term_reading
+    sentences.term_reading
   );
 
   if (readingAudioFilename == undefined) {
@@ -108,23 +135,26 @@ export async function generateMediaForSingle(
     };
   }
 
-  const generateAudioPromises = sentences.sentences.map(
-    (sentence) =>
-      new Promise<SentenceMediaData>(async (resolve) => {
-        const sentenceAudioFilename = await generateAudioToFile(
-          sentence.japanese
-        );
-        resolve({
-          term: term,
-          termReading: sentences.term_reading,
-          sentence,
-          termAudioFilename: readingAudioFilename,
-          sentenceAudioFilename,
-        });
-      })
+  const generateMediaPromises = sentences.sentences.map((sentence) =>
+    generateMediaForOneSentence(
+      term,
+      sentences.term_reading,
+      readingAudioFilename,
+      sentence
+    )
   );
 
-  const items = await Promise.all(generateAudioPromises);
+  const items = (await Promise.all(generateMediaPromises)).filter(
+    (sentence) => sentence !== null
+  );
+
+  if (items.length === 0) {
+    return {
+      term: term,
+      sentences: [],
+      error: "no-clozed-sentences",
+    };
+  }
 
   return {
     term: term,

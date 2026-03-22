@@ -3,7 +3,7 @@ import { DataPaths } from "common/IDataItems";
 import { loadCsv, saveCsv } from "common/csv_io";
 import {
   generateAndAddCards,
-  generateMediaForSingle,
+  generateMediaForTerm,
   type AddErrorMessage,
   type AddResult,
 } from "./generate_cards";
@@ -174,7 +174,7 @@ async function addInAdditionItems(
     `Generating addition cards for ${item.グループ番号}: ${item.漢字}`
   );
 
-  const media = await generateMediaForSingle(item.漢字, other_items);
+  const media = await generateMediaForTerm(item.漢字, other_items);
 
   if (media.error !== undefined) {
     return { error: media.error };

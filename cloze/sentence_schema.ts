@@ -9,7 +9,7 @@ export const SentenceSchema = z.object({
     .describe("A short English context for the sentence"),
 });
 
-export const ResponseSchema = z.object({
+export const SentencesResponseSchema = z.object({
   sentences: z.array(SentenceSchema).describe("The generated sentences"),
   term_reading: z.string().describe("The reading of the term in kana"),
   term_english_context: z
@@ -19,10 +19,12 @@ export const ResponseSchema = z.object({
     ),
 });
 
-export type SentenceSearchResult = z.infer<typeof ResponseSchema>;
+export type SentencesResponseType = z.infer<typeof SentencesResponseSchema>;
+
+export type SentenceSchemaType = z.infer<typeof SentenceSchema>;
 
 export type SentenceSearchFn = (
   term: string,
   other_terms: string[],
   max_sentences: number
-) => Promise<SentenceSearchResult | null>;
+) => Promise<SentencesResponseType | null>;
