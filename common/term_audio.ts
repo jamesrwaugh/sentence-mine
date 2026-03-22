@@ -99,10 +99,10 @@ async function _getInfoJpod101Alt(term: string): Promise<DownloadResult> {
   params.append("match_type", "exact");
   params.append("search_query", term);
 
-  const requestOptions = {
+  const requestOptions: RequestInit = {
     method: "POST",
     body: params,
-    redirect: "follow" as const,
+    redirect: "follow",
   };
 
   const response = await fetch(
