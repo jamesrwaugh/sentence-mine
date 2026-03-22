@@ -218,6 +218,27 @@ export async function addImageBase64(
   });
 }
 
+export async function replaceTermAudio(nid: number, termAudioFilename: string) {
+  const fullPath = join(DataPaths.audioTempFolder, termAudioFilename);
+  const data = await Bun.file(fullPath).arrayBuffer();
+  const b64Data = Buffer.from(data).toString("base64");
+
+  await client.note.updateNote({
+    note: {
+      fields: {},
+      audio: [
+        {
+          filename: `${termAudioFilename}_reading.mp3`,
+          data: b64Data,
+          replace: true,
+          fields: [nameof<SentencesNoteFields>("Audio")],
+        },
+      ],
+      id: nid,
+    },
+  });
+}
+
 export async function searchFirstNoteId(
   deckName: string,
   vocabTerm: string
