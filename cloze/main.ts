@@ -190,12 +190,13 @@ async function addInAdditionItems(
 
   let nids: number[] = [];
 
-  for (const result of media.sentences) {
+  for (const [index, sentence] of media.sentences.entries()) {
     const nid = await addClozeNote(
       deckName,
       modelName,
       {
-        MediaData: result,
+        ItemSentenceNumber: index,
+        MediaData: sentence,
         Alternatives: newAlts,
         GroupId: item.グループ番号,
       },

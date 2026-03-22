@@ -26,7 +26,7 @@ async function main() {
 }
 
 async function mains() {
-  const filename = await tryDownloadTermAudio("同士", "どし");
+  const filename = await tryDownloadTermAudio("断れる", "ことわれる");
 }
 
 await mains();

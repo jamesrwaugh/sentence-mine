@@ -192,11 +192,12 @@ export async function generateAndAddCards(
     (p) => p.media.error == undefined
   )) {
     let nids: number[] = [];
-    for (const sentence of media.sentences) {
+    for (const [index, sentence] of media.sentences.entries()) {
       const nid = await addClozeNote(
         deckName,
         modelName,
         {
+          ItemSentenceNumber: index,
           MediaData: sentence,
           Alternatives: alternatives,
           GroupId: group.GroupId,

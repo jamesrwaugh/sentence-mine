@@ -16,6 +16,7 @@ export interface AlternativeJson {
 }
 
 export interface ClozeNoteFields {
+  Id: AnkiField;
   Text: AnkiField;
   WordRtkKeywords: AnkiField;
   "Sentence-Audio": AnkiField;
@@ -51,6 +52,7 @@ export async function addClozeNote(
   deckName: string,
   modelName: string,
   item: {
+    ItemSentenceNumber: number;
     MediaData: SentenceMediaData;
     GroupId: string;
     Alternatives: AlternativeJson[];
@@ -59,7 +61,7 @@ export async function addClozeNote(
 ): Promise<number> {
   const client = new YankiConnect();
 
-  const { MediaData, Alternatives, GroupId } = item;
+  const { MediaData, Alternatives, GroupId, ItemSentenceNumber } = item;
 
   const {
     term: term,
@@ -75,10 +77,13 @@ export async function addClozeNote(
 
   type T = ClozeNoteFields;
 
+  const ankiId = `${GroupId}-${term}-${ItemSentenceNumber}`;
+
   const noteItem: Parameters<typeof client.note.addNote>[0]["note"] = {
     deckName,
     modelName,
     fields: {
+      [nameof<T>("Id")]: ankiId,
       [nameof<T>("Text")]: clozedSentence,
       [nameof<T>("WordRtkKeywords")]: FindRtkKeywordsJoinedComma(
         term,
