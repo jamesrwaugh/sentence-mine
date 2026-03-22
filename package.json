@@ -11,18 +11,18 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@ai-sdk/xai": "^2.0.54",
+    "@ai-sdk/xai": "^2.0.62",
     "@google-cloud/text-to-speech": "^6.4.0",
     "@types/underscore": "^1.13.0",
-    "ai": "^5.0.121",
+    "ai": "^5.0.157",
     "anki-apkg-parser": "./anki-apkg-parser/",
-    "csv": "^6.4.1",
+    "csv": "^6.5.1",
     "csv-parser": "^3.2.0",
     "dargs": "^8.1.0",
     "execa": "^9.6.1",
     "sudachi": "^0.1.5",
-    "underscore": "^1.13.7",
-    "yanki-connect": "^3.2.2",
-    "zod": "^4.3.5"
+    "underscore": "^1.13.8",
+    "yanki-connect": "^3.2.4",
+    "zod": "^4.3.6"
   }
 }
