@@ -9,7 +9,7 @@ import {
 } from "./generate_cards";
 import { groupBy } from "underscore";
 import { addClozeNote, updateExistingGroupIdAlternatives } from "./add_cards";
-import { GetJouyouRtkKeywords } from "common/rtk_keywords";
+import { LoadJouyouRtkKeywords } from "common/rtk_keywords";
 import { analyze } from "common/sudachi";
 import { confirmGoogleCloudConnectedOrError as confirmGoogleCloudConnectedOrThrow } from "./google";
 import { confirmXApiSetupOrError as confirmXApiSetupOrThrow } from "./grok";
@@ -186,7 +186,7 @@ async function addInAdditionItems(
     media.sentences[0]?.termReading ?? ""
   );
 
-  const rtkKeywords = await GetJouyouRtkKeywords();
+  const rtkKeywords = await LoadJouyouRtkKeywords();
 
   let nids: number[] = [];
 

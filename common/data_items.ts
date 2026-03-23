@@ -5,7 +5,7 @@ import {
   type IDataItemsSentencesOnly,
   DataPaths,
 } from "./IDataItems";
-import { GetJouyouRtkKeywords } from "./rtk_keywords";
+import { LoadJouyouRtkKeywords } from "./rtk_keywords";
 import { loadSentenceDeck } from "./search_sentence";
 
 function CheckForDataErrors(dataItems: IDataItems) {
@@ -41,7 +41,7 @@ export async function loadDataItems(): Promise<IDataItems> {
   const deck = await loadSentenceDeck();
 
   console.log("Loading RTK keywords...");
-  const rtkKeywords = await GetJouyouRtkKeywords();
+  const rtkKeywords = await LoadJouyouRtkKeywords();
 
   const dataItems: IDataItems = {
     dictFormIndex,

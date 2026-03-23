@@ -10,7 +10,7 @@ export interface RtkKeywordLine {
   jpdbCollisions: string;
 }
 
-export async function GetJouyouRtkKeywords(): Promise<RtkKeywordLine[]> {
+export async function LoadJouyouRtkKeywords(): Promise<RtkKeywordLine[]> {
   const rtkKeywords = await loadCsv<RtkKeywordLine>(DataPaths.rtkKeywordsCsv);
   return rtkKeywords.filter((r) => Number(r.heisigId) <= 2200);
 }
@@ -18,15 +18,14 @@ export async function GetJouyouRtkKeywords(): Promise<RtkKeywordLine[]> {
 export function FindRtkKeywords(
   word: string | undefined,
   rtkKeywordsAll: RtkKeywordLine[]
-) {
+): RtkKeywordLine[] {
   const wordLetters = word?.split("");
 
   const wordLettersSet = [...new Set(wordLetters)];
 
   const rtkKeywordsFound = wordLettersSet
     .map((letter) => rtkKeywordsAll.find((r) => r.kanji === letter))
-    .filter((r) => r !== undefined)
-    .map((r) => r);
+    .filter((r) => r !== undefined);
 
   return rtkKeywordsFound;
 }

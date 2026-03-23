@@ -1,6 +1,6 @@
 import { searchGrok } from "./grok";
 import { tryDownloadTermAudio } from "../common/term_audio";
-import { GetJouyouRtkKeywords } from "common/rtk_keywords";
+import { LoadJouyouRtkKeywords } from "common/rtk_keywords";
 import {
   type SentencesResponseType,
   type SentenceSchemaType,
@@ -178,7 +178,7 @@ export async function generateAndAddCards(
 ): Promise<Record<string, AddResult>> {
   const results: Record<string, AddResult> = {};
 
-  const rtkKeywords = await GetJouyouRtkKeywords();
+  const rtkKeywords = await LoadJouyouRtkKeywords();
 
   const groupResults = await generateMediaForGroup(group);
 
