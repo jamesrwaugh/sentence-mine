@@ -13,21 +13,15 @@ export async function chooseNextBestNote(
 
   const originalWords = new Set(await GetSudachiWords(originalSentence));
 
-  interface A {
-    words: Set<string>;
-    original: DictNote;
+  async function Go(s: DictNote) {
+    const items = await GetSudachiWords(s.sentence.sentence);
+    return {
+      words: new Set(items),
+      original: s,
+    };
   }
 
-  const sudachiPromises: Promise<A>[] = options.map(
-    (s) =>
-      new Promise(async (resolve) => {
-        const items = await GetSudachiWords(s.sentence.sentence);
-        resolve({
-          words: new Set(items),
-          original: s,
-        });
-      })
-  );
+  const sudachiPromises = options.map((s) => Go(s));
 
   const dictNoteWordsSets = await Promise.all(sudachiPromises);
 
