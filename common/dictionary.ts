@@ -71,6 +71,19 @@ async function loadYomichansFromFile(
   return more;
 }
 
+function deduplicateEntriesByHighestScore(entries: YomichanDictEntry[]) {
+  const map: Record<string, YomichanDictEntry> = {};
+
+  entries.reduce((acc, record) => {
+    if (record.score > (acc[record.expression]?.score ?? Number.MIN_VALUE)) {
+      acc[record.expression] = record;
+    }
+    return acc;
+  }, map);
+
+  return Object.values(map);
+}
+
 export async function loadYomichanDictionary(): Promise<YomichanDictEntry[]> {
   const glob = new Bun.Glob(
     join(DataPaths.jitendexYomitanFolder, "term_bank_*.json")
@@ -82,7 +95,9 @@ export async function loadYomichanDictionary(): Promise<YomichanDictEntry[]> {
     loadYomichansFromFile(filename)
   );
 
-  return (await Promise.all(loadPromises)).flat();
+  const items = (await Promise.all(loadPromises)).flat();
+
+  return deduplicateEntriesByHighestScore(items);
 }
 
 export interface DictionaryEntry {
