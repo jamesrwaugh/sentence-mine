@@ -81,11 +81,10 @@ export async function getClozeSentence(
 }
 
 async function main() {
-  const term = "詰まる";
-  const sentence = "このパズルは難しくて詰まった";
-
-  const b = await getClozeSentence(term, sentence);
-  console.log(b);
+  const term = "工夫";
+  const items = await loadDataItems();
+  const s = searchSentences(term, items);
+  console.log(s);
 }
 
 await main();

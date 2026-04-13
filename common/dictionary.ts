@@ -75,7 +75,9 @@ function deduplicateEntriesByHighestScore(entries: YomichanDictEntry[]) {
   const map: Record<string, YomichanDictEntry> = {};
 
   entries.reduce((acc, record) => {
-    if (record.score > (acc[record.expression]?.score ?? Number.MIN_VALUE)) {
+    if (
+      record.score > (acc[record.expression]?.score ?? Number.NEGATIVE_INFINITY)
+    ) {
       acc[record.expression] = record;
     }
     return acc;

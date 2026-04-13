@@ -117,7 +117,7 @@ export async function loadSentenceDeck(): Promise<SentenceDeck> {
   };
 }
 
-function findNormalizedForm(searchTerm: string): string | null {
+export function findNormalizedForm(searchTerm: string): string | null {
   const item = analyzeSync(searchTerm, { all: true, m: "c" });
 
   if (item.length === 1) {

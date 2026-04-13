@@ -239,6 +239,18 @@ export async function replaceTermAudio(nid: number, termAudioFilename: string) {
   });
 }
 
+export async function updateTextFields(
+  nid: number,
+  fields: Record<string, string>
+) {
+  await client.note.updateNote({
+    note: {
+      fields: fields,
+      id: nid,
+    },
+  });
+}
+
 export async function searchFirstNoteId(
   deckName: string,
   vocabTerm: string
