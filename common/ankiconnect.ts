@@ -5,7 +5,7 @@ import {
   type RtkKeywordLine,
   FindRtkKeywordsJoinedComma,
 } from "./rtk_keywords";
-import { join, resolve } from "node:path";
+import path, { join, resolve } from "node:path";
 import type { DictNote } from "./search_sentence";
 import { nameof } from "./nameof";
 
@@ -219,8 +219,37 @@ export async function addImageBase64(
 }
 
 export async function replaceTermAudio(nid: number, termAudioFilename: string) {
-  const fullPath = join(DataPaths.audioTempFolder, termAudioFilename);
-  const data = await Bun.file(fullPath).arrayBuffer();
+  const { absoluteAuthPath } = resolveAudioPaths(termAudioFilename, "none");
+
+  return await replaceAudioField(
+    nid,
+    nameof<SentencesNoteFields>("Audio"),
+    absoluteAuthPath
+  );
+}
+
+export async function replaceSentenceAudio(
+  nid: number,
+  sentenceAudioFilename: string
+) {
+  const { absoluteSentenceAudioPath } = resolveAudioPaths(
+    "none",
+    sentenceAudioFilename
+  );
+
+  return await replaceAudioField(
+    nid,
+    nameof<SentencesNoteFields>("Sentence-Audio"),
+    absoluteSentenceAudioPath
+  );
+}
+
+async function replaceAudioField(
+  nid: number,
+  fieldName: string,
+  absoluteAudioFilename: string
+) {
+  const data = await Bun.file(absoluteAudioFilename).arrayBuffer();
   const b64Data = Buffer.from(data).toString("base64");
 
   await client.note.updateNote({
@@ -228,10 +257,10 @@ export async function replaceTermAudio(nid: number, termAudioFilename: string) {
       fields: {},
       audio: [
         {
-          filename: `${termAudioFilename}_reading.mp3`,
+          filename: `sentence_${path.basename(absoluteAudioFilename)}.mp3`,
           data: b64Data,
           replace: true,
-          fields: [nameof<SentencesNoteFields>("Audio")],
+          fields: [fieldName],
         },
       ],
       id: nid,

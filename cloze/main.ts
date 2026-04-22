@@ -13,6 +13,7 @@ import { LoadJouyouRtkKeywords } from "common/rtk_keywords";
 import { analyze } from "common/sudachi";
 import { confirmGoogleCloudConnectedOrError as confirmGoogleCloudConnectedOrThrow } from "./google";
 import { confirmXApiSetupOrError as confirmXApiSetupOrThrow } from "./grok";
+import { Constants } from "common/constants";
 
 export interface InCsvItem {
   漢字: string;
@@ -54,8 +55,8 @@ function assertBadAddResult(
 }
 
 async function main() {
-  const deckName = "Clozes";
-  const modelName = "ClozeCard";
+  const deckName = Constants.ClozeDeckName;
+  const modelName = Constants.ClozeDeckModelName;
 
   const allItems = await loadCsv<InCsvItem>(DataPaths.inputClozeCsv);
 

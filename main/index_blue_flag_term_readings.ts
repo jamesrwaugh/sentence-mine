@@ -10,10 +10,10 @@ import { nameof } from "common/nameof";
 import { findNormalizedForm } from "common/search_sentence";
 import { tryDownloadTermAudio } from "common/term_audio";
 
-// This was used to update old / incorrect readings in words
-// which originally pulled from the dictionary without first
+// Blue flag is used for "Term reading is wrong, pull from dictionary again."
+// Originally, terms were pulled from the dictionary without first
 // sorting by score, for most common reading first,
-// so it would mismatch the audio.
+// so it would sometimes mismatch the audio.
 
 async function updateBlueFlaggedTermReadingsWithNewDictEntry() {
   const dictionary = await loadDictionary();

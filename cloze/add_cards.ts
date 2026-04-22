@@ -23,6 +23,7 @@ export interface ClozeNoteFields {
   Picture: AnkiField;
   English: AnkiField;
   EnglishContext: AnkiField;
+  EnglishContextDetail: AnkiField;
   ClozeAudio: AnkiField;
   ClozeAnswer: AnkiField;
   ClozeReading: AnkiField;

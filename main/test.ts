@@ -81,7 +81,7 @@ export async function getClozeSentence(
 }
 
 async function main() {
-  const term = "工夫";
+  const term = "人事";
   const items = await loadDataItems();
   const s = searchSentences(term, items);
   console.log(s);
