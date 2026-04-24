@@ -11,7 +11,6 @@ import { groupBy } from "underscore";
 import { addClozeNote, updateExistingGroupIdAlternatives } from "./add_cards";
 import { LoadJouyouRtkKeywords } from "common/rtk_keywords";
 import { analyze } from "common/sudachi";
-import { confirmGoogleCloudConnectedOrError as confirmGoogleCloudConnectedOrThrow } from "./google";
 import { confirmXApiSetupOrError as confirmXApiSetupOrThrow } from "./grok";
 import { Constants } from "common/constants";
 
@@ -200,6 +199,7 @@ async function addInAdditionItems(
         MediaData: sentence,
         Alternatives: newAlts,
         GroupId: item.グループ番号,
+        DifferenceContext: media.difference_context!,
       },
       rtkKeywords
     );
@@ -242,6 +242,10 @@ async function checkForInputErrors(
           .join(", ")}`
       );
     }
+
+    if (group.Items.length < 2) {
+      throw new Error(`Group ${group.GroupId} needs at least 2 elements`);
+    }
   }
 }
 
@@ -261,7 +265,7 @@ async function testExternalConnections(deckName: string, modelName: string) {
   await testAnkiConnectOrThrow(deckName, modelName);
 
   // Google
-  await confirmGoogleCloudConnectedOrThrow();
+  // await confirmGoogleCloudConnectedOrThrow();
 
   console.log("OK");
 }

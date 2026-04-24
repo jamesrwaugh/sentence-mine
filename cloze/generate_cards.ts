@@ -2,10 +2,10 @@ import { searchGrok } from "./grok";
 import { tryDownloadTermAudio } from "../common/term_audio";
 import { LoadJouyouRtkKeywords } from "common/rtk_keywords";
 import {
-  type SentencesResponseType,
   type SentenceSchemaType,
+  type DifferenceContextType,
 } from "./sentence_schema";
-import { generateAudioToFile } from "./google";
+import { generateAudioToFile } from "./grok";
 import type { InCsvItem, InCsvGroup } from "./main";
 import { uniq } from "underscore";
 import { addClozeNote, type AlternativeJson } from "./add_cards";
@@ -23,6 +23,7 @@ export interface SentenceMediaData {
 interface SentenceMediaResult {
   term: string;
   sentences: SentenceMediaData[];
+  difference_context: DifferenceContextType;
   error?: AddErrorMessage;
 }
 
@@ -37,6 +38,11 @@ export type AddErrorMessage =
   | "no-clozed-sentences"
   | "no-audio"
   | "data-error";
+
+const ErrorDifferenceValue: DifferenceContextType = {
+  summary: "Error generating content",
+  others: [],
+};
 
 export async function generateMediaForGroup(
   group: InCsvGroup
@@ -117,6 +123,7 @@ export async function generateMediaForTerm(
     return {
       term: term,
       sentences: [],
+      difference_context: ErrorDifferenceValue,
       error: "no-sentences",
     };
   }
@@ -131,6 +138,7 @@ export async function generateMediaForTerm(
     return {
       term: term,
       sentences: [],
+      difference_context: ErrorDifferenceValue,
       error: "no-audio",
     };
   }
@@ -152,6 +160,7 @@ export async function generateMediaForTerm(
     return {
       term: term,
       sentences: [],
+      difference_context: ErrorDifferenceValue,
       error: "no-clozed-sentences",
     };
   }
@@ -159,6 +168,7 @@ export async function generateMediaForTerm(
   return {
     term: term,
     sentences: items,
+    difference_context: sentences.difference_context,
     error: undefined,
   };
 }
@@ -201,6 +211,7 @@ export async function generateAndAddCards(
           MediaData: sentence,
           Alternatives: alternatives,
           GroupId: group.GroupId,
+          DifferenceContext: media.difference_context,
         },
         rtkKeywords
       );

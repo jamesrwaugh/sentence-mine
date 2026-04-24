@@ -9,6 +9,7 @@ import type { SentenceMediaData } from "./generate_cards";
 import { nameof } from "common/nameof";
 import type { InCsvItem } from "./main";
 import { type AnkiField, queryNotes } from "common/ankiconnect";
+import type { DifferenceContextType } from "./sentence_schema";
 
 export interface AlternativeJson {
   w: string;
@@ -57,12 +58,19 @@ export async function addClozeNote(
     MediaData: SentenceMediaData;
     GroupId: string;
     Alternatives: AlternativeJson[];
+    DifferenceContext: DifferenceContextType;
   },
   rtkKeywords: RtkKeywordLine[]
 ): Promise<number> {
   const client = new YankiConnect();
 
-  const { MediaData, Alternatives, GroupId, ItemSentenceNumber } = item;
+  const {
+    MediaData,
+    Alternatives,
+    GroupId,
+    ItemSentenceNumber,
+    DifferenceContext,
+  } = item;
 
   const {
     term: term,
@@ -96,6 +104,7 @@ export async function addClozeNote(
       [nameof<T>("EnglishContext")]: sentence.english_context,
       [nameof<T>("AlternativesJson")]: JSON.stringify(Alternatives),
       [nameof<T>("GroupId")]: GroupId,
+      [nameof<T>("EnglishContextDetail")]: JSON.stringify(DifferenceContext),
     },
     audio: [
       {
