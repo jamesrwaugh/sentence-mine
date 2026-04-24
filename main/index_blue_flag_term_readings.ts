@@ -38,9 +38,9 @@ async function updateBlueFlaggedTermReadingsWithNewDictEntry() {
       continue;
     }
 
-    // if (newDictEntry.reading === note.fields.Reading.value) {
-    //   continue;
-    // }
+    if (newDictEntry.reading === note.fields.Reading.value) {
+      continue;
+    }
 
     console.log(
       note.fields.Word.value,

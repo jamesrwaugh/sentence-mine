@@ -297,6 +297,7 @@ type AllAnkiFields<T> = {
 
 export interface MiniNote<TFieldType extends AllAnkiFields<TFieldType>> {
   nid: number;
+  tags: string[];
   fields: TFieldType;
 }
 
@@ -319,6 +320,7 @@ export async function queryNotes<TFieldType extends AllAnkiFields<TFieldType>>(
 
   return notes.map((note) => ({
     nid: note.noteId,
+    tags: note.tags,
     fields: note.fields as unknown as TFieldType,
   }));
 }
