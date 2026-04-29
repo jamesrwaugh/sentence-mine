@@ -57,4 +57,4 @@ async function main() {
   console.log("Done");
 }
 
-await main();
+await main(); // 従業員、作業、みかさんとぼくが一つずつ段落を読んで見てと思います
