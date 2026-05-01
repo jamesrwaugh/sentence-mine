@@ -21,7 +21,6 @@ export const DifferenceContextSchema = z.object({
 export const SentenceSchema = z.object({
   japanese: z.string().describe("The Japanese text of the sentence"),
   english: z.string().describe("The English translation of the sentence"),
-  reading: z.string().describe("The reading of the sentence in kana"),
   english_context: z
     .string()
     .describe("A short English context for the sentence"),

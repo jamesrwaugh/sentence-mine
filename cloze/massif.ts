@@ -47,11 +47,7 @@ export const searchMassif: SentenceSearchFn = async (
         english_context: "",
       }));
 
-    return {
-      sentences,
-      term_reading: term,
-      term_english_context: "",
-    };
+    return null;
   } catch (error) {
     console.error("Error searching Massif API:", error);
     return null;
