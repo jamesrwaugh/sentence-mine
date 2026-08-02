@@ -25,7 +25,8 @@ async function main() {
     const sentences = searchSentences(note.fields.Word.value, dataItems);
 
     if (sentences.length > 0) {
-      console.log(note.nid, note.fields.Word.value);
+      console.log(note.nid, note.fields.Word.value, note.fields.Reading.value);
+
       for (const [i, s] of sentences.entries()) {
         console.log(`${i}: ${s.sentence.sentence}`);
       }
